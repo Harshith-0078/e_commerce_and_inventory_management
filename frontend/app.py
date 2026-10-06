@@ -29,8 +29,13 @@ import sys
 import uuid
 import hashlib
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from typing import Optional, Dict, Any, List
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
 
 # Ensure local imports work whether launched from project root or frontend directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -58,6 +63,16 @@ try:
         find_optimal_warehouse_for_cart,
         evaluate_cart_fulfillment
     )
+    from db_integration.eda_analytics import (
+        ensure_eda_tables_and_seed,
+        get_available_months,
+        get_eda_kpis,
+        get_monthly_trend_data,
+        get_category_distribution,
+        get_top_selling_products,
+        generate_monthly_pdf_report,
+        record_intake
+    )
 except ImportError:
     from db import (
         get_db_connection,
@@ -74,6 +89,16 @@ except ImportError:
         evaluate_all_warehouses,
         find_optimal_warehouse_for_cart,
         evaluate_cart_fulfillment
+    )
+    from eda_analytics import (
+        ensure_eda_tables_and_seed,
+        get_available_months,
+        get_eda_kpis,
+        get_monthly_trend_data,
+        get_category_distribution,
+        get_top_selling_products,
+        generate_monthly_pdf_report,
+        record_intake
     )
 
 
@@ -203,6 +228,7 @@ class NexusPeripheralsApp(tk.Tk):
         self.tab_warehouse = ttk.Frame(self.notebook)
         self.tab_manager = ttk.Frame(self.notebook)
         self.tab_admin = ttk.Frame(self.notebook)
+        self.tab_eda = ttk.Frame(self.notebook)
 
         # Tab Registry with Canonical Metadata
         self.ALL_TABS = [
@@ -213,6 +239,7 @@ class NexusPeripheralsApp(tk.Tk):
             ("warehouse", self.tab_warehouse, " 📊 Warehouse Stock Monitor "),
             ("manager", self.tab_manager, " 🏭 Hub Manager Operations "),
             ("admin", self.tab_admin, " 🛡️ System Admin Suite "),
+            ("eda", self.tab_eda, " 📈 Exploratory Data Analysis & Reports "),
         ]
 
         # Initially add all tabs so their widget trees instantiate cleanly
@@ -227,6 +254,7 @@ class NexusPeripheralsApp(tk.Tk):
         self._build_warehouse_tab()
         self._build_manager_tab()
         self._build_admin_tab()
+        self._build_eda_tab()
 
         # Enforce strict Role-Based Access Control (RBAC) immediately
         self._apply_role_tab_visibility()
@@ -244,11 +272,13 @@ class NexusPeripheralsApp(tk.Tk):
               - Warehouse Stock Monitor (internal inventory levels across hubs)
               - Hub Manager Operations (hub restock & dispatch controls)
               - System Admin Suite (cross-hub analytics, add SKU/warehouse, master order management)
+              - Exploratory Data Analysis (EDA) & Reports
         - WAREHOUSE_MANAGER:
             Sees:
               1. 👤 Staff Session
               2. 🏭 Hub Manager Operations (stock restock & dispatch for assigned warehouse)
               3. 📊 Warehouse Stock Monitor
+              4. 📈 Localized Hub EDA & Monthly PDF Audit Reports
             STRICTLY HIDDEN:
               - Customer Cart & Checkout
               - System Admin Suite
@@ -261,6 +291,7 @@ class NexusPeripheralsApp(tk.Tk):
               4. 📊 Warehouse Stock Monitor
               5. 🏭 Hub Manager Operations
               6. 📦 Global Order Ledger & Manifests
+              7. 📈 Global Cross-Hub EDA & Executive PDF Audit Reports
         - NOT LOGGED IN:
             Only sees Authentication Portals and Catalog (Browse Only).
         """
@@ -269,9 +300,9 @@ class NexusPeripheralsApp(tk.Tk):
         if role == "CUSTOMER":
             allowed_tab_keys = ["auth", "catalog", "order", "history"]
         elif role == "WAREHOUSE_MANAGER":
-            allowed_tab_keys = ["auth", "manager", "warehouse"]
+            allowed_tab_keys = ["auth", "manager", "warehouse", "eda"]
         elif role == "ADMIN":
-            allowed_tab_keys = ["auth", "admin", "catalog", "warehouse", "manager", "history"]
+            allowed_tab_keys = ["auth", "admin", "catalog", "warehouse", "manager", "history", "eda"]
         else:
             # Unauthenticated state: Only login portal and public catalog
             allowed_tab_keys = ["auth", "catalog"]
@@ -297,6 +328,11 @@ class NexusPeripheralsApp(tk.Tk):
                 elif key == "manager" and role == "WAREHOUSE_MANAGER":
                     hub_id = self.current_user.get('AssignedWarehouseID', '') if self.current_user else ''
                     title = f" 🏭 Hub #{hub_id} Operations "
+                elif key == "eda" and role == "WAREHOUSE_MANAGER":
+                    hub_id = self.current_user.get('AssignedWarehouseID', '') if self.current_user else ''
+                    title = f" 📈 Hub #{hub_id} Analytics & Reports "
+                elif key == "eda" and role == "ADMIN":
+                    title = " 📈 Global Analytics & Reports "
 
                 self.notebook.add(tab_frame, text=title)
 
@@ -829,6 +865,7 @@ class NexusPeripheralsApp(tk.Tk):
             )
             self.refresh_manager_hub_view()
             self.refresh_warehouse_monitor()
+            self.refresh_eda_view()
             self.notebook.select(self.tab_manager)
 
         elif role == "ADMIN":
@@ -845,6 +882,7 @@ class NexusPeripheralsApp(tk.Tk):
             self.refresh_admin_analytics()
             self.refresh_warehouse_monitor()
             self.refresh_order_history()
+            self.refresh_eda_view()
             self.notebook.select(self.tab_admin)
 
         self.btn_logout.config(state=tk.NORMAL)
@@ -2312,10 +2350,15 @@ class NexusPeripheralsApp(tk.Tk):
             cur.close()
             conn.close()
 
+            # Audit log intake event in INVENTORY_INTAKE
+            staff_id = self.current_user.get("StaffID") if self.current_user else None
+            record_intake(wh_id, product_id, restock_amt, staff_id)
+
             messagebox.showinfo("Stock Updated", f"Successfully added +{restock_amt} units to '{product_name}' at Hub #{wh_id}!")
             self.refresh_manager_hub_view()
             self.refresh_catalog()
             self.refresh_warehouse_monitor()
+            self.refresh_eda_view()
 
         except Exception as e:
             messagebox.showerror("Restock Failed", f"Database error updating stock: {str(e)}")
@@ -2688,6 +2731,293 @@ class NexusPeripheralsApp(tk.Tk):
 
         except Exception as e:
             messagebox.showerror("Error", f"Could not create warehouse:\n{str(e)}")
+
+    # -------------------------------------------------------------------------
+    # TAB 8: EXPLORATORY DATA ANALYSIS (EDA) & MONTHLY PDF REPORTS
+    # -------------------------------------------------------------------------
+    def _build_eda_tab(self):
+        container = tk.Frame(self.tab_eda, bg=self.BG_MAIN)
+        container.pack(fill=tk.BOTH, expand=True, padx=16, pady=10)
+
+        # 1. Top Controls Bar: Scope & Month Selection + Actions
+        ctrl_card = tk.LabelFrame(
+            container,
+            text=" Exploratory Data Analysis & Audit Report Filters ",
+            font=("Segoe UI", 10, "bold"),
+            bg=self.CARD_BG,
+            padx=12,
+            pady=8
+        )
+        ctrl_card.pack(fill=tk.X, pady=(0, 8))
+
+        # Warehouse scope
+        tk.Label(ctrl_card, text="Fulfillment Hub Scope:", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG).pack(side=tk.LEFT, padx=(4, 6))
+        self.combo_eda_wh = ttk.Combobox(
+            ctrl_card,
+            values=["Global Network (All Hubs)", "Chennai Hub (#1)", "Bengaluru Hub (#2)", "Mumbai Hub (#3)"],
+            state="readonly",
+            width=24,
+            font=("Segoe UI", 9)
+        )
+        self.combo_eda_wh.set("Global Network (All Hubs)")
+        self.combo_eda_wh.pack(side=tk.LEFT, padx=(0, 14))
+        self.combo_eda_wh.bind("<<ComboboxSelected>>", self._on_eda_filter_changed)
+
+        # Month selector
+        tk.Label(ctrl_card, text="Target Month:", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG).pack(side=tk.LEFT, padx=(4, 6))
+        self.combo_eda_month = ttk.Combobox(
+            ctrl_card,
+            values=["All Months (Annual Multi-Month Trend)"],
+            state="readonly",
+            width=24,
+            font=("Segoe UI", 9)
+        )
+        self.combo_eda_month.set("All Months (Annual Multi-Month Trend)")
+        self.combo_eda_month.pack(side=tk.LEFT, padx=(0, 14))
+        self.combo_eda_month.bind("<<ComboboxSelected>>", self._on_eda_filter_changed)
+
+        # Action Buttons
+        btn_refresh_eda = tk.Button(
+            ctrl_card,
+            text="🔄 Refresh Analytics",
+            font=("Segoe UI", 9, "bold"),
+            bg="#374151",
+            fg="#FFFFFF",
+            relief=tk.FLAT,
+            padx=10,
+            pady=4,
+            command=self.refresh_eda_view
+        )
+        btn_refresh_eda.pack(side=tk.LEFT, padx=6)
+
+        btn_pdf = tk.Button(
+            ctrl_card,
+            text="📄 Download Monthly PDF Report",
+            font=("Segoe UI", 9, "bold"),
+            bg="#2563EB",
+            fg="#FFFFFF",
+            relief=tk.FLAT,
+            padx=12,
+            pady=4,
+            command=self._download_eda_pdf
+        )
+        btn_pdf.pack(side=tk.RIGHT, padx=4)
+
+        # 2. Executive KPI Cards Row
+        kpi_frame = tk.Frame(container, bg=self.BG_MAIN)
+        kpi_frame.pack(fill=tk.X, pady=(0, 8))
+
+        self.eda_kpi_cards = {}
+        kpi_specs = [
+            ("total_sales", "Total Revenue (Sales)", "₹0.00", "#059669"),
+            ("total_orders", "Orders Fulfilled", "0 orders", "#2563EB"),
+            ("total_intake", "Restock Intake Volume", "0 units", "#7C3AED"),
+            ("aov", "Average Order Value", "₹0.00", "#D97706"),
+        ]
+
+        for i, (key, title, default_val, clr) in enumerate(kpi_specs):
+            card = tk.Frame(kpi_frame, bg=self.CARD_BG, bd=1, relief=tk.SOLID, padx=10, pady=6)
+            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0 if i == 0 else 6, 0))
+            tk.Label(card, text=title, font=("Segoe UI", 8, "bold"), bg=self.CARD_BG, fg="#6B7280").pack(anchor=tk.W)
+            lbl_val = tk.Label(card, text=default_val, font=("Segoe UI", 12, "bold"), bg=self.CARD_BG, fg=clr)
+            lbl_val.pack(anchor=tk.W, pady=(2, 0))
+            self.eda_kpi_cards[key] = lbl_val
+
+        # 3. Embedded Matplotlib Visual Analytics Frame
+        chart_container = tk.Frame(container, bg="#FFFFFF", bd=1, relief=tk.SOLID)
+        chart_container.pack(fill=tk.BOTH, expand=True)
+
+        self.eda_fig = Figure(figsize=(10.5, 4.8), dpi=95, facecolor="#FFFFFF")
+        self.eda_canvas = FigureCanvasTkAgg(self.eda_fig, master=chart_container)
+        self.eda_canvas_widget = self.eda_canvas.get_tk_widget()
+        self.eda_canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+    def _get_selected_eda_scope(self):
+        wh_text = self.combo_eda_wh.get()
+        if "Chennai" in wh_text or "(#1)" in wh_text:
+            wid = 1
+        elif "Bengaluru" in wh_text or "(#2)" in wh_text:
+            wid = 2
+        elif "Mumbai" in wh_text or "(#3)" in wh_text:
+            wid = 3
+        else:
+            wid = None
+
+        m_text = self.combo_eda_month.get()
+        if "All Months" in m_text or not m_text:
+            month = "ALL"
+        else:
+            month = m_text.split(" ")[0].strip()
+
+        return wid, month
+
+    def _on_eda_filter_changed(self, event=None):
+        wid, month = self._get_selected_eda_scope()
+        self._render_eda_view(wid, month)
+
+    def refresh_eda_view(self):
+        if not hasattr(self, "combo_eda_wh") or not self.combo_eda_wh.winfo_exists():
+            return
+
+        # Configure warehouse scope availability based on current role
+        if self.current_role == "WAREHOUSE_MANAGER":
+            assigned_wid = self.current_user.get("AssignedWarehouseID") if self.current_user else 1
+            hub_mapping = {1: "Chennai Hub (#1)", 2: "Bengaluru Hub (#2)", 3: "Mumbai Hub (#3)"}
+            hub_name = hub_mapping.get(assigned_wid, f"Hub #{assigned_wid}")
+            self.combo_eda_wh.config(values=[hub_name], state="disabled")
+            self.combo_eda_wh.set(hub_name)
+            wid = assigned_wid
+        else:
+            self.combo_eda_wh.config(
+                values=["Global Network (All Hubs)", "Chennai Hub (#1)", "Bengaluru Hub (#2)", "Mumbai Hub (#3)"],
+                state="readonly"
+            )
+            wid, _ = self._get_selected_eda_scope()
+
+        # Update available months
+        available_months = get_available_months(wid)
+        month_vals = ["All Months (Annual Multi-Month Trend)"] + available_months
+        current_m = self.combo_eda_month.get()
+        self.combo_eda_month.config(values=month_vals)
+        if current_m in month_vals:
+            self.combo_eda_month.set(current_m)
+        else:
+            self.combo_eda_month.set("All Months (Annual Multi-Month Trend)")
+
+        wid, month = self._get_selected_eda_scope()
+        self._render_eda_view(wid, month)
+
+    def _render_eda_view(self, warehouse_id, month):
+        try:
+            # 1. Update KPI Cards
+            kpis = get_eda_kpis(warehouse_id, month)
+            self.eda_kpi_cards["total_sales"].config(text=f"₹{kpis['total_sales']:,.2f}")
+            self.eda_kpi_cards["total_orders"].config(text=f"{kpis['total_orders']:,} orders")
+            self.eda_kpi_cards["total_intake"].config(text=f"{kpis['total_intake']:,} units")
+            self.eda_kpi_cards["aov"].config(text=f"₹{kpis['aov']:,.2f}")
+
+            # 2. Render Charts on Matplotlib Canvas
+            self.eda_fig.clear()
+            import matplotlib.gridspec as gridspec
+            import matplotlib.ticker as ticker
+            gs = gridspec.GridSpec(2, 2, figure=self.eda_fig, width_ratios=[1.3, 1.0], height_ratios=[1, 1],
+                                   left=0.08, right=0.95, top=0.90, bottom=0.14, wspace=0.28, hspace=0.48)
+
+            ax1 = self.eda_fig.add_subplot(gs[:, 0])
+            ax2 = self.eda_fig.add_subplot(gs[0, 1])
+            ax3 = self.eda_fig.add_subplot(gs[1, 1])
+
+            # Plot 1: Monthly Operations (Sales Revenue vs Intake vs Order Count)
+            trends = get_monthly_trend_data(warehouse_id)
+            if trends:
+                x_labels = [t["month"] for t in trends]
+                sales_k = [t["sales"] / 1000.0 for t in trends]
+                intakes = [t["intake"] for t in trends]
+                orders = [t["orders"] for t in trends]
+
+                x = np.arange(len(x_labels))
+                w = 0.35
+
+                ax1.bar(x - w/2, sales_k, w, label="Sales (₹ in Thousands)", color="#3B82F6", alpha=0.85)
+                ax1.bar(x + w/2, intakes, w, label="Intake Restock (Units)", color="#10B981", alpha=0.85)
+                ax1.set_xticks(x)
+                ax1.set_xticklabels(x_labels, fontsize=8)
+                ax1.set_ylabel("Revenue (₹ Thousands) / Units", fontsize=8.5, color="#374151")
+                ax1.set_title("Monthly Operations Trend (Sales vs Restock Intake)", fontsize=9.5, weight="bold", color="#1F2937", pad=8)
+                ax1.grid(axis="y", linestyle="--", alpha=0.35)
+
+                ax1_twin = ax1.twinx()
+                ax1_twin.plot(x, orders, color="#DC2626", marker="o", linewidth=2, label="Order Count")
+                ax1_twin.set_ylabel("Order Count", fontsize=8.5, color="#DC2626")
+                ax1_twin.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+
+                h1, l1 = ax1.get_legend_handles_labels()
+                h2, l2 = ax1_twin.get_legend_handles_labels()
+                ax1.legend(h1 + h2, l1 + l2, loc="upper left", fontsize=7.5, framealpha=0.9)
+            else:
+                ax1.text(0.5, 0.5, "No multi-month historical data recorded", ha="center", va="center")
+
+            # Plot 2: Category Revenue Distribution (Pie Chart)
+            categories = get_category_distribution(warehouse_id, month)
+            if categories and sum(c["revenue"] for c in categories) > 0:
+                cat_labels = [c["category"] for c in categories]
+                cat_revs = [c["revenue"] for c in categories]
+                palette = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"]
+                wedges, texts, autotexts = ax2.pie(
+                    cat_revs,
+                    labels=None,
+                    autopct="%1.1f%%",
+                    startangle=140,
+                    colors=palette[:len(cat_revs)],
+                    pctdistance=0.75,
+                    textprops=dict(color="#FFFFFF", weight="bold", fontsize=7)
+                )
+                ax2.set_title("Category Revenue Share", fontsize=9, weight="bold", color="#1F2937", pad=6)
+                ax2.legend(wedges, cat_labels, loc="lower center", bbox_to_anchor=(0.5, -0.32), fontsize=6.5, frameon=False)
+            else:
+                ax2.text(0.5, 0.5, "No category sales recorded", ha="center", va="center", fontsize=8)
+                ax2.axis("off")
+
+            # Plot 3: Top Selling Products (Horizontal Bar Chart)
+            top_prods = get_top_selling_products(warehouse_id, month, limit=4)
+            if top_prods:
+                names = [p["product_name"][:16] + ".." if len(p["product_name"]) > 16 else p["product_name"] for p in top_prods]
+                revs = [p["revenue"] / 1000.0 for p in top_prods]
+                y_indices = range(len(names))
+                ax3.barh(y_indices, revs, color="#6366F1", alpha=0.85)
+                ax3.set_yticks(y_indices)
+                ax3.set_yticklabels(names, fontsize=7)
+                ax3.invert_yaxis()
+                ax3.set_xlabel("Revenue (₹ Thousands)", fontsize=7.5)
+                ax3.set_title("Top Selling Products", fontsize=9, weight="bold", color="#1F2937", pad=6)
+                ax3.grid(axis="x", linestyle="--", alpha=0.35)
+            else:
+                ax3.text(0.5, 0.5, "No product sales recorded", ha="center", va="center", fontsize=8)
+                ax3.axis("off")
+
+            self.eda_canvas.draw()
+        except Exception as e:
+            self.set_status(f"Error rendering EDA analytics: {str(e)}", is_error=True)
+
+    def _download_eda_pdf(self):
+        wid, month = self._get_selected_eda_scope()
+        hub_tag = f"Hub_{wid}" if wid else "Global_Network"
+        month_tag = month.replace("-", "_") if month != "ALL" else "All_Time"
+        default_filename = f"Nexus_Peripherals_Audit_Report_{month_tag}_{hub_tag}.pdf"
+
+        file_path = filedialog.asksaveasfilename(
+            parent=self,
+            title="Save Monthly Operations & Financial Audit Report PDF",
+            initialfile=default_filename,
+            defaultextension=".pdf",
+            filetypes=[("PDF Documents", "*.pdf"), ("All Files", "*.*")]
+        )
+        if not file_path:
+            return
+
+        staff_name = self.current_user.get("FullName", "Authorized Staff") if self.current_user else "Authorized Staff"
+        staff_role = self.current_role.replace("_", " ").title() if self.current_role else "Staff"
+
+        ok, msg = generate_monthly_pdf_report(
+            output_path=file_path,
+            warehouse_id=wid,
+            month=month,
+            staff_name=staff_name,
+            staff_role=staff_role
+        )
+
+        if ok:
+            open_now = messagebox.askyesno(
+                "PDF Report Generated",
+                f"Audit Report PDF generated successfully!\n\nFile saved to:\n{file_path}\n\nWould you like to open it now?"
+            )
+            if open_now:
+                try:
+                    os.startfile(file_path)
+                except Exception:
+                    pass
+        else:
+            messagebox.showerror("Export Failed", f"Could not generate PDF report:\n{msg}")
 
     # -------------------------------------------------------------------------
     # DB SETTINGS & INITIALIZATION

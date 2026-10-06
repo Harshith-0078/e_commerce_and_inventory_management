@@ -242,3 +242,23 @@ All 10 tests run in under 1 second against MySQL 8.0.
 | Warehouse Manager | samarth@gmail.com | manager123 | Chennai Hub Manager Operations |
 
 *(Customer accounts start empty and can be registered dynamically through the Customer Portal).*
+
+---
+
+## 9. Exploratory Data Analysis and Audit Reporting
+
+The system features an integrated Exploratory Data Analysis (EDA) dashboard accessible by Warehouse Managers and System Administrators:
+
+1. Visual Metrics:
+   - Monthly Operations Trend: Dual-axis comparative analysis of Sales Revenue (INR in thousands), Restock Intake Volume (Units), and Order Frequency.
+   - Category Revenue Distribution: Interactive pie chart displaying revenue share across Mechanical Keyboards, Switches, and Keycaps.
+   - Top Performing Products: Ranking of top-selling SKUs by gross revenue and unit volume.
+
+2. Scoped Role Access:
+   - Warehouse Managers: Analytics are automatically isolated to their assigned fulfillment facility.
+   - System Administrators: Network-wide global analytics with the option to filter by specific hubs.
+
+3. Monthly Audit PDF Generation:
+   - Hub Managers and Admins can export publication-grade, vector-sharp PDF reports for any specific month or full annual periods.
+   - Each report contains formal metadata, executive financial KPI summaries, embedded high-resolution visual plots, itemized product sales tables, and an audit compliance sign-off.
+

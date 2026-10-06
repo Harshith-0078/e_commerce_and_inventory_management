@@ -13,6 +13,7 @@ USE nexus_peripherals;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- Drop existing tables in reverse dependency order
+DROP TABLE IF EXISTS INVENTORY_INTAKE;
 DROP TABLE IF EXISTS SHIPMENT;
 DROP TABLE IF EXISTS PAYMENT;
 DROP TABLE IF EXISTS ORDER_ITEM;
@@ -171,3 +172,20 @@ CREATE TABLE SHIPMENT (
     FOREIGN KEY (OrderID) REFERENCES ORDERS(OrderID) ON DELETE CASCADE,
     FOREIGN KEY (WarehouseID) REFERENCES WAREHOUSE(WarehouseID) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------------------------------------------------------
+-- Table: INVENTORY_INTAKE
+-- Audit log of restock operations and incoming supplier inventory batches
+-- ----------------------------------------------------------------------------
+CREATE TABLE INVENTORY_INTAKE (
+    IntakeID INT AUTO_INCREMENT PRIMARY KEY,
+    WarehouseID INT NOT NULL,
+    ProductID INT NOT NULL,
+    QuantityAdded INT NOT NULL CHECK (QuantityAdded > 0),
+    IntakeDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    StaffID INT NULL,
+    FOREIGN KEY (WarehouseID) REFERENCES WAREHOUSE(WarehouseID) ON DELETE CASCADE,
+    FOREIGN KEY (ProductID) REFERENCES PRODUCT(ProductID) ON DELETE CASCADE,
+    FOREIGN KEY (StaffID) REFERENCES STAFF_USER(StaffID) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
