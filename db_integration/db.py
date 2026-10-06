@@ -100,8 +100,7 @@ def get_db_cursor(
         conn = get_db_connection(custom_config=custom_config, autocommit=autocommit)
         owns_connection = True
 
-    cursor_class = MySQLCursorDict if dictionary else MySQLCursor
-    cur = conn.cursor(cursor_class=cursor_class)
+    cur = conn.cursor(dictionary=dictionary)
     try:
         yield conn, cur
     finally:
