@@ -262,3 +262,23 @@ The system features an integrated Exploratory Data Analysis (EDA) dashboard acce
    - Hub Managers and Admins can export publication-grade, vector-sharp PDF reports for any specific month or full annual periods.
    - Each report contains formal metadata, executive financial KPI summaries, embedded high-resolution visual plots, itemized product sales tables, and an audit compliance sign-off.
 
+---
+
+## 10. Automated SMTP Email Notification Engine and Outbox Telemetry
+
+The platform includes an asynchronous transactional email notification subsystem (`db_integration/smtp_mailer.py`) built using the Python standard library (`smtplib`, `email.mime`) with zero external pip dependencies:
+
+1. Customer Notification Channels:
+   - Order Confirmation Receipts: Dispatches an itemized HTML/plaintext invoice upon checkout with line items, unit prices, grand total, payment method, assigned fulfillment hub, and tracking number.
+   - Real-Time Shipment Tracking Transitions: Automatically alerts customers as warehouse managers advance shipment status (`PREPARING` to `IN_TRANSIT` to `OUT_FOR_DELIVERY` to `DELIVERED`).
+
+2. Hub Operations and Management Alerts:
+   - Fulfillment Routing Notifications: Alerts the assigned warehouse manager when an order has completed Haversine proximity evaluation and is routed to their facility for packing.
+   - Automated Low Stock Threshold Warnings: Automatically queries inventory levels post-transaction and dispatches an alert to the facility manager when available units fall below safety reorder levels (`StockQuantity <= ReorderLevel`).
+   - Executive Administrative Directives: Allows the System Administrator to dispatch directives and operational notices to individual hub managers or broadcast to all hub managers network-wide.
+
+3. Asynchronous Thread Execution and Graceful Sandbox Fallback:
+   - Non-Blocking Operations: All dispatches are executed on background daemon threads, guaranteeing sub-second ACID transaction commit times and responsive UI interactions.
+   - Outbox Simulation Logger: If live SMTP credentials are not configured, the system automatically routes all outgoing mail through a simulated outbox logger (`logs/email_notifications.log`) and displays telemetry inside the in-app Mailer and Outbox dialog.
+
+

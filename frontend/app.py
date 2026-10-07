@@ -73,6 +73,16 @@ try:
         generate_monthly_pdf_report,
         record_intake
     )
+    from db_integration.smtp_mailer import (
+        notify_customer_order_placed,
+        notify_customer_shipment_updated,
+        notify_hub_manager_new_order,
+        notify_hub_manager_low_stock,
+        notify_admin_directive_to_manager,
+        get_outbox_history,
+        get_smtp_config,
+        update_smtp_config
+    )
 except ImportError:
     from db import (
         get_db_connection,
@@ -99,6 +109,16 @@ except ImportError:
         get_top_selling_products,
         generate_monthly_pdf_report,
         record_intake
+    )
+    from smtp_mailer import (
+        notify_customer_order_placed,
+        notify_customer_shipment_updated,
+        notify_hub_manager_new_order,
+        notify_hub_manager_low_stock,
+        notify_admin_directive_to_manager,
+        get_outbox_history,
+        get_smtp_config,
+        update_smtp_config
     )
 
 
@@ -193,7 +213,7 @@ class NexusPeripheralsApp(tk.Tk):
         )
         subtitle_lbl.pack(side=tk.LEFT, pady=14)
 
-        # Right-side session indicator & DB Settings button
+        # Right-side session indicator & Header Action Buttons
         btn_settings = tk.Button(
             header_frame,
             text="⚙ DB Settings / Reset",
@@ -206,6 +226,19 @@ class NexusPeripheralsApp(tk.Tk):
             command=self._open_db_settings_dialog
         )
         btn_settings.pack(side=tk.RIGHT, padx=16, pady=14)
+
+        btn_mailer = tk.Button(
+            header_frame,
+            text="✉ Mailer & Outbox",
+            font=("Segoe UI", 9, "bold"),
+            bg="#1D4ED8",
+            fg="#F9FAFB",
+            relief=tk.FLAT,
+            padx=10,
+            pady=4,
+            command=self._open_mailer_dialog
+        )
+        btn_mailer.pack(side=tk.RIGHT, padx=(0, 6), pady=14)
 
         self.lbl_session = tk.Label(
             header_frame,
@@ -1835,17 +1868,95 @@ class NexusPeripheralsApp(tk.Tk):
             cursor.close()
             conn.close()
 
+            # Preserve cart items for email receipt and clear cart
+            placed_items = list(self.shopping_cart)
+
+            # --- AUTOMATED SMTP NOTIFICATION DISPATCH ---
+            # 1. Notify Customer with Itemized Order Confirmation
+            if self.current_user and self.current_user.get("Email"):
+                notify_customer_order_placed(
+                    customer_email=self.current_user["Email"],
+                    customer_name=self.current_user.get("FullName", "Customer"),
+                    order_id=order_id,
+                    total_amount=grand_total,
+                    items=placed_items,
+                    shipping_address=shipping_address,
+                    warehouse_name=optimal_hub["warehouse_name"],
+                    tracking_number=tracking_number
+                )
+                self._log_txn(f"[SMTP] Order confirmation email dispatched to Customer ({self.current_user['Email']})")
+
+            # 2. Notify Assigned Hub Manager (e.g. samarth@gmail.com) of New Dispatch Task
+            try:
+                mgr_conn = get_db_connection(self.db_config)
+                mgr_cur = mgr_conn.cursor(dictionary=True)
+                mgr_cur.execute(
+                    "SELECT FullName, Email FROM STAFF_USER WHERE Role = 'WAREHOUSE_MANAGER' AND AssignedWarehouseID = %s LIMIT 1",
+                    (warehouse_id,)
+                )
+                mgr_user = mgr_cur.fetchone()
+                mgr_cur.close()
+                mgr_conn.close()
+
+                if mgr_user and mgr_user.get("Email"):
+                    notify_hub_manager_new_order(
+                        manager_email=mgr_user["Email"],
+                        manager_name=mgr_user.get("FullName", "Hub Manager"),
+                        warehouse_name=optimal_hub["warehouse_name"],
+                        order_id=order_id,
+                        customer_name=self.current_user.get("FullName", "Customer") if self.current_user else "Customer",
+                        destination_city=self.current_user.get("City", "") if self.current_user else "",
+                        items=placed_items,
+                        tracking_number=tracking_number
+                    )
+                    self._log_txn(f"[SMTP] Incoming order dispatch alert sent to Hub Manager ({mgr_user['Email']})")
+            except Exception as e:
+                print(f"Error dispatching manager alert: {e}")
+
+            # 3. Check for Depleted Stock & Send Low Stock Warning if triggered
+            try:
+                for it in placed_items:
+                    pid = it["product_id"]
+                    chk_conn = get_db_connection(self.db_config)
+                    chk_cur = chk_conn.cursor(dictionary=True)
+                    chk_cur.execute("""
+                        SELECT pi.StockQuantity, pi.ReorderLevel, p.ProductName, p.SKU, w.WarehouseName, su.Email as ManagerEmail, su.FullName as ManagerName
+                        FROM PRODUCT_INVENTORY pi
+                        INNER JOIN PRODUCT p ON pi.ProductID = p.ProductID
+                        INNER JOIN WAREHOUSE w ON pi.WarehouseID = w.WarehouseID
+                        LEFT JOIN STAFF_USER su ON su.Role = 'WAREHOUSE_MANAGER' AND su.AssignedWarehouseID = pi.WarehouseID
+                        WHERE pi.ProductID = %s AND pi.WarehouseID = %s
+                    """, (pid, warehouse_id))
+                    stk_info = chk_cur.fetchone()
+                    chk_cur.close()
+                    chk_conn.close()
+
+                    if stk_info and stk_info["StockQuantity"] <= stk_info["ReorderLevel"] and stk_info.get("ManagerEmail"):
+                        notify_hub_manager_low_stock(
+                            manager_email=stk_info["ManagerEmail"],
+                            manager_name=stk_info.get("ManagerName", "Hub Manager"),
+                            warehouse_name=stk_info["WarehouseName"],
+                            product_name=stk_info["ProductName"],
+                            sku=stk_info["SKU"],
+                            current_stock=stk_info["StockQuantity"],
+                            reorder_level=stk_info["ReorderLevel"]
+                        )
+                        self._log_txn(f"[SMTP] Low stock alert sent for {stk_info['SKU']} to {stk_info['ManagerEmail']}")
+            except Exception as e:
+                print(f"Error checking low stock threshold: {e}")
+
             # Build itemized confirmation receipt
-            items_summary_text = "\n".join([f"• {it['product_name']} x {it['quantity']} = ₹{it['subtotal']:,.2f}" for it in self.shopping_cart])
+            items_summary_text = "\n".join([f"• {it['product_name']} x {it['quantity']} = ₹{it['subtotal']:,.2f}" for it in placed_items])
             receipt_msg = (
                 f"🎉 Multi-Item Order Placed Successfully!\n\n"
                 f"Order ID: #{order_id}\n"
-                f"Line Items ({len(self.shopping_cart)} unique items):\n{items_summary_text}\n\n"
+                f"Line Items ({len(placed_items)} unique items):\n{items_summary_text}\n\n"
                 f"Grand Total Paid: ₹{grand_total:,.2f} ({payment_method})\n"
                 f"Fulfillment Hub: {optimal_hub['warehouse_name']} ({optimal_hub['city']})\n"
                 f"Delivery Distance: {optimal_hub['distance_km']:.2f} km\n"
                 f"Tracking Number: {tracking_number}\n\n"
-                f"Status: PREPARING FOR DISPATCH"
+                f"Status: PREPARING FOR DISPATCH\n\n"
+                f"✉ An email confirmation has been dispatched to your email address."
             )
 
             # Clear cart
@@ -2394,7 +2505,35 @@ class NexusPeripheralsApp(tk.Tk):
             cur.close()
             conn.close()
 
-            messagebox.showinfo("Shipment Updated", f"Tracking: {tracking_no}\nStatus updated to '{new_status}'.")
+            # Automated SMTP Customer Notification Dispatch
+            try:
+                info_conn = get_db_connection(self.db_config)
+                info_cur = info_conn.cursor(dictionary=True)
+                info_cur.execute("""
+                    SELECT c.Email, c.FullName, s.OrderID, s.TrackingNumber, w.WarehouseName
+                    FROM SHIPMENT s
+                    INNER JOIN ORDERS o ON s.OrderID = o.OrderID
+                    INNER JOIN CUSTOMER c ON o.CustomerID = c.CustomerID
+                    INNER JOIN WAREHOUSE w ON s.WarehouseID = w.WarehouseID
+                    WHERE s.ShipmentID = %s
+                """, (shipment_id,))
+                ship_info = info_cur.fetchone()
+                info_cur.close()
+                info_conn.close()
+
+                if ship_info and ship_info.get("Email"):
+                    notify_customer_shipment_updated(
+                        customer_email=ship_info["Email"],
+                        customer_name=ship_info.get("FullName", "Customer"),
+                        order_id=ship_info["OrderID"],
+                        tracking_number=ship_info["TrackingNumber"],
+                        new_status=new_status,
+                        warehouse_name=ship_info["WarehouseName"]
+                    )
+            except Exception as e:
+                print(f"Error dispatching shipment email: {e}")
+
+            messagebox.showinfo("Shipment Updated", f"Tracking: {tracking_no}\nStatus updated to '{new_status}'.\n\n✉ Automated status update email dispatched to customer.")
             self.refresh_manager_hub_view()
             self.refresh_order_history()
 
@@ -2440,10 +2579,12 @@ class NexusPeripheralsApp(tk.Tk):
         tab_add_product = ttk.Frame(admin_sub_notebook)
         tab_add_category = ttk.Frame(admin_sub_notebook)
         tab_add_warehouse = ttk.Frame(admin_sub_notebook)
+        tab_mail_directive = ttk.Frame(admin_sub_notebook)
 
         admin_sub_notebook.add(tab_add_product, text=" ➕ Add New Component / Product ")
         admin_sub_notebook.add(tab_add_category, text=" 📁 Add Category ")
         admin_sub_notebook.add(tab_add_warehouse, text=" 📍 Add Fulfillment Warehouse ")
+        admin_sub_notebook.add(tab_mail_directive, text=" ✉️ Email Hub Managers ")
 
         # Sub-Tab 1: Add New Product
         self._build_add_product_form(tab_add_product)
@@ -2451,6 +2592,8 @@ class NexusPeripheralsApp(tk.Tk):
         self._build_add_category_form(tab_add_category)
         # Sub-Tab 3: Add New Warehouse
         self._build_add_warehouse_form(tab_add_warehouse)
+        # Sub-Tab 4: Admin Directive Dispatcher
+        self._build_admin_mailer_form(tab_mail_directive)
 
     def _create_kpi_card(self, parent, title: str, initial_val: str, fg_col: str, bg_col: str):
         card = tk.Frame(parent, bg=bg_col, bd=1, relief=tk.SOLID, padx=12, pady=8)
@@ -2731,6 +2874,259 @@ class NexusPeripheralsApp(tk.Tk):
 
         except Exception as e:
             messagebox.showerror("Error", f"Could not create warehouse:\n{str(e)}")
+
+    def _build_admin_mailer_form(self, parent):
+        f = tk.Frame(parent, bg=self.CARD_BG, padx=25, pady=20)
+        f.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(
+            f,
+            text="Executive Operational Directives & Broadcast Dispatcher (SMTP)",
+            font=("Segoe UI", 11, "bold"),
+            bg=self.CARD_BG,
+            fg="#1E3A8A"
+        ).grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 4))
+
+        tk.Label(
+            f,
+            text="Dispatch real-time directives, urgent restock alerts, or operational notices directly to hub managers.",
+            font=("Segoe UI", 9),
+            bg=self.CARD_BG,
+            fg="#4B5563"
+        ).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(0, 12))
+
+        tk.Label(f, text="Recipient Hub Manager *", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG).grid(row=2, column=0, sticky=tk.W, pady=6)
+        self.adm_mail_recipient = ttk.Combobox(
+            f,
+            values=[
+                "Broadcast to All Hub Managers",
+                "Chennai Hub (#1) - Samarth (samarth@gmail.com)",
+                "Bengaluru Hub (#2) - Manager (manager.bengaluru@nexus.local)",
+                "Mumbai Hub (#3) - Manager (manager.mumbai@nexus.local)"
+            ],
+            state="readonly",
+            width=50,
+            font=("Segoe UI", 9)
+        )
+        self.adm_mail_recipient.current(0)
+        self.adm_mail_recipient.grid(row=2, column=1, sticky=tk.W, pady=6, padx=10)
+
+        tk.Label(f, text="Directive Category *", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG).grid(row=3, column=0, sticky=tk.W, pady=6)
+        self.adm_mail_category = ttk.Combobox(
+            f,
+            values=[
+                "Operational Directive",
+                "Urgent Restock Warning",
+                "Pre-Dispatch Inventory Audit",
+                "Holiday Fulfillment Protocol",
+                "Platform Maintenance Notice"
+            ],
+            state="readonly",
+            width=50,
+            font=("Segoe UI", 9)
+        )
+        self.adm_mail_category.current(0)
+        self.adm_mail_category.grid(row=3, column=1, sticky=tk.W, pady=6, padx=10)
+
+        tk.Label(f, text="Subject Line *", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG).grid(row=4, column=0, sticky=tk.W, pady=6)
+        self.adm_mail_subject = ttk.Entry(f, width=52, font=("Segoe UI", 9))
+        self.adm_mail_subject.insert(0, "Mandatory Pre-Dispatch Hardware Quality Check")
+        self.adm_mail_subject.grid(row=4, column=1, sticky=tk.W, pady=6, padx=10)
+
+        tk.Label(f, text="Message Body *", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG).grid(row=5, column=0, sticky=tk.NW, pady=6)
+        self.adm_mail_body = tk.Text(f, width=52, height=6, font=("Segoe UI", 9), relief=tk.SOLID, bd=1)
+        self.adm_mail_body.insert(
+            tk.END,
+            "Please ensure all outgoing keyboard kits and switches are thoroughly inspected, packed with anti-static bubble wrap, and marked as IN_TRANSIT immediately upon carrier handover."
+        )
+        self.adm_mail_body.grid(row=5, column=1, sticky=tk.W, pady=6, padx=10)
+
+        self.lbl_mail_status = tk.Label(f, text="", font=("Segoe UI", 9), bg=self.CARD_BG, fg="#059669")
+        self.lbl_mail_status.grid(row=6, column=1, sticky=tk.W, pady=4, padx=10)
+
+        btn_send_directive = tk.Button(
+            f,
+            text="🚀 Dispatch Directive Email via SMTP",
+            font=("Segoe UI", 9, "bold"),
+            bg="#1E3A8A",
+            fg="#FFFFFF",
+            relief=tk.FLAT,
+            padx=14,
+            pady=8,
+            command=self._handle_send_admin_directive
+        )
+        btn_send_directive.grid(row=7, column=1, sticky=tk.W, pady=(8, 0), padx=10)
+
+    def _handle_send_admin_directive(self):
+        target = self.adm_mail_recipient.get()
+        category = self.adm_mail_category.get()
+        subject_raw = self.adm_mail_subject.get().strip()
+        body = self.adm_mail_body.get("1.0", tk.END).strip()
+
+        if not subject_raw or not body:
+            messagebox.showwarning("Incomplete Form", "Please provide both a Subject Line and Message Body.")
+            return
+
+        subject = f"[{category.upper()}] {subject_raw}"
+        admin_name = self.current_user.get("FullName", "System Administrator") if self.current_user else "System Administrator"
+
+        targets = []
+        if "All Hub Managers" in target:
+            try:
+                conn = get_db_connection(self.db_config)
+                cur = conn.cursor(dictionary=True)
+                cur.execute("""
+                    SELECT su.FullName, su.Email, w.WarehouseName 
+                    FROM STAFF_USER su 
+                    LEFT JOIN WAREHOUSE w ON su.AssignedWarehouseID = w.WarehouseID 
+                    WHERE su.Role = 'WAREHOUSE_MANAGER'
+                """)
+                rows = cur.fetchall()
+                cur.close()
+                conn.close()
+                for r in rows:
+                    if r.get("Email"):
+                        targets.append((r["Email"], r.get("FullName", "Hub Manager"), r.get("WarehouseName", "Network Hub")))
+            except Exception as e:
+                messagebox.showerror("Database Error", f"Could not fetch hub managers:\n{str(e)}")
+                return
+        else:
+            email = target.split("(")[-1].replace(")", "").strip()
+            name = target.split(" - ")[1].split("(")[0].strip() if " - " in target else "Hub Manager"
+            hub = target.split(" - ")[0].strip() if " - " in target else None
+            targets.append((email, name, hub))
+
+        if not targets:
+            messagebox.showinfo("No Recipients", "No active warehouse manager email targets found.")
+            return
+
+        for email, name, hub in targets:
+            notify_admin_directive_to_manager(
+                sender_admin_name=admin_name,
+                recipient_email=email,
+                recipient_name=name,
+                subject_line=subject,
+                directive_body=body,
+                warehouse_name=hub
+            )
+
+        self.lbl_mail_status.config(text=f"✓ Directive successfully dispatched to {len(targets)} manager(s) via SMTP!", fg="#059669")
+        messagebox.showinfo("Directive Dispatched", f"Executive Directive successfully dispatched to {len(targets)} recipient(s):\n" + "\n".join([f"• {t[1]} ({t[0]})" for t in targets]))
+
+    def _open_mailer_dialog(self):
+        dialog = tk.Toplevel(self)
+        dialog.title("Nexus Peripherals — SMTP Notification Engine & Outbox Manifest")
+        dialog.geometry("740, 560")
+        dialog.transient(self)
+        dialog.grab_set()
+
+        frame = tk.Frame(dialog, padx=16, pady=12, bg="#F9FAFB")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(frame, text="✉ SMTP Mailer Configuration & Live Outbox Telemetry", font=("Segoe UI", 12, "bold"), bg="#F9FAFB", fg="#1E3A8A").pack(anchor=tk.W, pady=(0, 6))
+
+        cfg = get_smtp_config()
+
+        # Config Frame
+        cfg_frame = tk.LabelFrame(frame, text=" SMTP Server Settings ", font=("Segoe UI", 9, "bold"), bg="#FFFFFF", padx=12, pady=8)
+        cfg_frame.pack(fill=tk.X, pady=(0, 10))
+
+        row1 = tk.Frame(cfg_frame, bg="#FFFFFF")
+        row1.pack(fill=tk.X, pady=3)
+        tk.Label(row1, text="SMTP Host:", width=12, anchor=tk.W, font=("Segoe UI", 8, "bold"), bg="#FFFFFF").pack(side=tk.LEFT)
+        e_host = ttk.Entry(row1, width=22)
+        e_host.insert(0, cfg.get("smtp_host", "smtp.gmail.com"))
+        e_host.pack(side=tk.LEFT, padx=(0, 15))
+
+        tk.Label(row1, text="Port:", width=6, anchor=tk.W, font=("Segoe UI", 8, "bold"), bg="#FFFFFF").pack(side=tk.LEFT)
+        e_port = ttk.Entry(row1, width=8)
+        e_port.insert(0, str(cfg.get("smtp_port", 587)))
+        e_port.pack(side=tk.LEFT)
+
+        row2 = tk.Frame(cfg_frame, bg="#FFFFFF")
+        row2.pack(fill=tk.X, pady=3)
+        tk.Label(row2, text="Sender User:", width=12, anchor=tk.W, font=("Segoe UI", 8, "bold"), bg="#FFFFFF").pack(side=tk.LEFT)
+        e_user = ttk.Entry(row2, width=32)
+        e_user.insert(0, cfg.get("smtp_user", "notifications.nexusperipherals@gmail.com"))
+        e_user.pack(side=tk.LEFT, padx=(0, 15))
+
+        tk.Label(row2, text="Password:", width=10, anchor=tk.W, font=("Segoe UI", 8, "bold"), bg="#FFFFFF").pack(side=tk.LEFT)
+        e_pass = ttk.Entry(row2, width=16, show="•")
+        e_pass.insert(0, cfg.get("smtp_password", ""))
+        e_pass.pack(side=tk.LEFT)
+
+        var_sim = tk.BooleanVar(value=cfg.get("simulate_mode", True))
+        chk_sim = ttk.Checkbutton(cfg_frame, text="Enable Sandbox / Simulation Mode (Safely logs outgoing dispatches without live internet SMTP)", variable=var_sim)
+        chk_sim.pack(anchor=tk.W, pady=(6, 4))
+
+        def save_cfg():
+            update_smtp_config({
+                "smtp_host": e_host.get().strip(),
+                "smtp_port": int(e_port.get().strip() or "587"),
+                "smtp_user": e_user.get().strip(),
+                "smtp_password": e_pass.get(),
+                "simulate_mode": var_sim.get()
+            })
+            messagebox.showinfo("Settings Saved", "SMTP Notification engine configuration updated!")
+
+        def test_mail():
+            save_cfg()
+            recipient = self.current_user.get("Email") if self.current_user else "test.receiver@nexus.local"
+            notify_customer_order_placed(
+                customer_email=recipient,
+                customer_name="Test Customer",
+                order_id=777,
+                total_amount=16999.00,
+                items=[{"product_name": "Keychron Q1 Pro (Test)", "quantity": 1, "unit_price": 16999.00, "subtotal": 16999.00}],
+                shipping_address="Test Delivery Lane, Chennai",
+                warehouse_name="South Fulfillment Hub",
+                tracking_number="TRK-TEST-777"
+            )
+            refresh_outbox()
+            messagebox.showinfo("Test Dispatched", f"Test notification dispatched to '{recipient}'!\nCheck the Outbox manifest table below.")
+
+        btn_row = tk.Frame(cfg_frame, bg="#FFFFFF")
+        btn_row.pack(fill=tk.X, pady=(4, 0))
+        tk.Button(btn_row, text="💾 Save SMTP Settings", font=("Segoe UI", 8, "bold"), bg="#2563EB", fg="#FFFFFF", padx=8, pady=3, command=save_cfg).pack(side=tk.LEFT, padx=(0, 6))
+        tk.Button(btn_row, text="🧪 Dispatch Test Email", font=("Segoe UI", 8, "bold"), bg="#059669", fg="#FFFFFF", padx=8, pady=3, command=test_mail).pack(side=tk.LEFT)
+
+        # Outbox Manifest Section
+        outbox_frame = tk.LabelFrame(frame, text=" Live Email Notification Outbox Manifest ", font=("Segoe UI", 9, "bold"), bg="#FFFFFF", padx=10, pady=8)
+        outbox_frame.pack(fill=tk.BOTH, expand=True)
+
+        cols = ("Timestamp", "Type", "Recipient", "Subject", "Status")
+        tree_outbox = ttk.Treeview(outbox_frame, columns=cols, show="headings", height=8)
+        tree_outbox.heading("Timestamp", text="Timestamp")
+        tree_outbox.heading("Type", text="Type")
+        tree_outbox.heading("Recipient", text="Recipient")
+        tree_outbox.heading("Subject", text="Subject")
+        tree_outbox.heading("Status", text="Status")
+
+        tree_outbox.column("Timestamp", width=130, anchor=tk.CENTER)
+        tree_outbox.column("Type", width=150, anchor=tk.CENTER)
+        tree_outbox.column("Recipient", width=160, anchor=tk.W)
+        tree_outbox.column("Subject", width=220, anchor=tk.W)
+        tree_outbox.column("Status", width=140, anchor=tk.CENTER)
+
+        tree_outbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll = ttk.Scrollbar(outbox_frame, orient=tk.VERTICAL, command=tree_outbox.yview)
+        tree_outbox.configure(yscrollcommand=scroll.set)
+        scroll.pack(side=tk.LEFT, fill=tk.Y)
+
+        def refresh_outbox():
+            for item in tree_outbox.get_children():
+                tree_outbox.delete(item)
+            for entry in get_outbox_history():
+                tree_outbox.insert("", tk.END, values=(
+                    entry.get("timestamp", ""),
+                    entry.get("type", ""),
+                    entry.get("to", ""),
+                    entry.get("subject", ""),
+                    entry.get("status", "")
+                ))
+
+        refresh_outbox()
+        tk.Button(frame, text="🔄 Refresh Outbox Manifest", font=("Segoe UI", 8), bg="#E5E7EB", padx=8, pady=3, command=refresh_outbox).pack(anchor=tk.E, pady=(6, 0))
 
     # -------------------------------------------------------------------------
     # TAB 8: EXPLORATORY DATA ANALYSIS (EDA) & MONTHLY PDF REPORTS
