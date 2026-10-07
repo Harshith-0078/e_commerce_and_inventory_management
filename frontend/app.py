@@ -26,6 +26,7 @@ Three Distinct User Portals:
 
 import os
 import sys
+import json
 import uuid
 import hashlib
 import tkinter as tk
@@ -122,6 +123,35 @@ except ImportError:
     )
 
 
+SAVED_CREDENTIALS_FILE = os.path.join(current_dir, "saved_credentials.json")
+
+DEFAULT_SAVED_CREDENTIALS: Dict[str, Any] = {
+    "remember_enabled": True,
+    "last_role": "ADMIN",
+    "portals": {
+        "ADMIN": {
+            "identifier": "admin",
+            "password": "admin123"
+        },
+        "WAREHOUSE_MANAGER": {
+            "identifier": "samarth@gmail.com",
+            "password": "manager123"
+        },
+        "CUSTOMER": {
+            "identifier": "rohan@gmail.com",
+            "password": "customer123"
+        }
+    },
+    "profiles": [
+        {"role": "ADMIN", "label": "🛡️ Admin [Executive Oversight] (admin)", "identifier": "admin", "password": "admin123"},
+        {"role": "WAREHOUSE_MANAGER", "label": "🏭 Samarth Mgr [Chennai Hub] (samarth@gmail.com)", "identifier": "samarth@gmail.com", "password": "manager123"},
+        {"role": "WAREHOUSE_MANAGER", "label": "🏭 Chennai Hub Manager (manager_chennai)", "identifier": "manager_chennai", "password": "chennai123"},
+        {"role": "WAREHOUSE_MANAGER", "label": "🏭 Bengaluru Hub Manager (manager_bengaluru)", "identifier": "manager_bengaluru", "password": "bengaluru123"},
+        {"role": "WAREHOUSE_MANAGER", "label": "🏭 Mumbai Hub Manager (manager_mumbai)", "identifier": "manager_mumbai", "password": "mumbai123"}
+    ]
+}
+
+
 def hash_password(password: str) -> str:
     """Computes SHA-256 hex digest for secure credential storage."""
     return hashlib.sha256(password.strip().encode("utf-8")).hexdigest()
@@ -136,6 +166,10 @@ class NexusPeripheralsApp(tk.Tk):
 
         # Database credentials config (editable via settings dialog)
         self.db_config = DEFAULT_CONFIG.copy()
+
+        # Remembered Credentials Configuration
+        self.saved_credentials = self._load_saved_credentials()
+        self.show_password_var = tk.BooleanVar(value=False)
 
         # Active Session State
         # Role: 'CUSTOMER', 'WAREHOUSE_MANAGER', 'ADMIN', or None
@@ -391,6 +425,168 @@ class NexusPeripheralsApp(tk.Tk):
         )
 
     # -------------------------------------------------------------------------
+    # CREDENTIAL MANAGEMENT & REMEMBER-ME PERSISTENCE
+    # -------------------------------------------------------------------------
+    def _load_saved_credentials(self) -> Dict[str, Any]:
+        try:
+            if os.path.exists(SAVED_CREDENTIALS_FILE):
+                with open(SAVED_CREDENTIALS_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        merged = DEFAULT_SAVED_CREDENTIALS.copy()
+                        merged.update(data)
+                        if "portals" in data and isinstance(data["portals"], dict):
+                            merged_portals = DEFAULT_SAVED_CREDENTIALS["portals"].copy()
+                            merged_portals.update(data["portals"])
+                            merged["portals"] = merged_portals
+                        return merged
+        except Exception as e:
+            print(f"Error loading saved credentials: {e}")
+
+        try:
+            with open(SAVED_CREDENTIALS_FILE, "w", encoding="utf-8") as f:
+                json.dump(DEFAULT_SAVED_CREDENTIALS, f, indent=2)
+        except Exception:
+            pass
+
+        return DEFAULT_SAVED_CREDENTIALS.copy()
+
+    def _persist_saved_credentials(self):
+        try:
+            with open(SAVED_CREDENTIALS_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.saved_credentials, f, indent=2)
+        except Exception as e:
+            print(f"Error persisting saved credentials: {e}")
+
+    def _save_credentials_for_role(self, role: str, identifier: str, password: str, full_name: Optional[str] = None):
+        var_remember = self.__dict__.get("var_remember_creds")
+        if var_remember and not var_remember.get():
+            return
+
+        if "portals" not in self.saved_credentials:
+            self.saved_credentials["portals"] = {}
+
+        self.saved_credentials["portals"][role] = {
+            "identifier": identifier,
+            "password": password
+        }
+        self.saved_credentials["last_role"] = role
+        self.saved_credentials["remember_enabled"] = True
+
+        profiles = self.saved_credentials.get("profiles", [])
+        matched = False
+        for p in profiles:
+            if p.get("role") == role and p.get("identifier") == identifier:
+                p["password"] = password
+                if full_name:
+                    p["label"] = f"{role.replace('_', ' ').title()} - {full_name} ({identifier})"
+                matched = True
+                break
+
+        if not matched:
+            label = f"{role.replace('_', ' ').title()} - {full_name} ({identifier})" if full_name else f"{role.replace('_', ' ').title()} ({identifier})"
+            profiles.insert(0, {
+                "role": role,
+                "label": label,
+                "identifier": identifier,
+                "password": password
+            })
+        self.saved_credentials["profiles"] = profiles
+
+        self._persist_saved_credentials()
+        self._refresh_saved_profiles_dropdown()
+
+    def _load_credentials_for_role(self, role: str):
+        if "entry_email" not in self.__dict__ or "entry_password" not in self.__dict__:
+            return
+        if self.entry_email is None or self.entry_password is None:
+            return
+        var_remember = self.__dict__.get("var_remember_creds")
+        if var_remember and not var_remember.get():
+            return
+
+        portal_data = self.saved_credentials.get("portals", {}).get(role, {})
+        ident = portal_data.get("identifier", "")
+        pw = portal_data.get("password", "")
+
+        self.entry_email.delete(0, tk.END)
+        if ident:
+            self.entry_email.insert(0, ident)
+
+        self.entry_password.delete(0, tk.END)
+        if pw:
+            self.entry_password.insert(0, pw)
+
+    def _forget_saved_credentials(self):
+        role = self.portal_role_var.get()
+        if "portals" in self.saved_credentials and role in self.saved_credentials["portals"]:
+            del self.saved_credentials["portals"][role]
+
+        self._persist_saved_credentials()
+        if self.__dict__.get("entry_email"):
+            self.entry_email.delete(0, tk.END)
+        if self.__dict__.get("entry_password"):
+            self.entry_password.delete(0, tk.END)
+        role_label = role.replace("_", " ").title()
+        self.set_status(f"Saved credentials for {role_label} cleared from disk.")
+        messagebox.showinfo("Credentials Cleared", f"Saved credentials for '{role_label}' have been forgotten.")
+
+    def _on_remember_toggle(self):
+        var_remember = self.__dict__.get("var_remember_creds")
+        enabled = var_remember.get() if var_remember else True
+        self.saved_credentials["remember_enabled"] = enabled
+        self._persist_saved_credentials()
+        if enabled:
+            role = self.portal_role_var.get()
+            ident = self.entry_email.get().strip() if self.__dict__.get("entry_email") else ""
+            pw = self.entry_password.get() if self.__dict__.get("entry_password") else ""
+            if ident and pw:
+                self._save_credentials_for_role(role, ident, pw)
+            self.set_status("Remember credentials enabled. Username and password will be remembered.")
+        else:
+            self.set_status("Remember credentials disabled.")
+
+    def _toggle_password_visibility(self):
+        show_pw = not self.show_password_var.get()
+        self.show_password_var.set(show_pw)
+        if show_pw:
+            self.entry_password.config(show="")
+            self.btn_toggle_pw.config(text="🔒 Hide")
+        else:
+            self.entry_password.config(show="•")
+            self.btn_toggle_pw.config(text="👁 Show")
+
+    def _refresh_saved_profiles_dropdown(self):
+        combo = self.__dict__.get("combo_saved_profiles")
+        if combo is None:
+            return
+        profiles = self.saved_credentials.get("profiles", [])
+        labels = [p.get("label", f"{p.get('role')} - {p.get('identifier')}") for p in profiles]
+        combo["values"] = labels
+        if labels and not combo.get():
+            combo.current(0)
+
+    def _on_saved_profile_selected(self, event=None):
+        idx = self.combo_saved_profiles.current()
+        profiles = self.saved_credentials.get("profiles", [])
+        if 0 <= idx < len(profiles):
+            target = profiles[idx]
+            self.portal_role_var.set(target["role"])
+            self._on_portal_role_switched()
+            if target["role"] == "CUSTOMER":
+                self.auth_mode_var.set("login")
+                self._on_auth_mode_change()
+            self.entry_email.delete(0, tk.END)
+            self.entry_email.insert(0, target["identifier"])
+            self.entry_password.delete(0, tk.END)
+            self.entry_password.insert(0, target["password"])
+            self.set_status(f"Loaded credentials for {target.get('label', target['identifier'])}")
+
+    def _quick_login_selected_profile(self):
+        self._on_saved_profile_selected()
+        self._handle_auth_action()
+
+    # -------------------------------------------------------------------------
     # TAB 1: AUTHENTICATION PORTALS (3 ROLES)
     # -------------------------------------------------------------------------
     def _build_auth_tab(self):
@@ -443,7 +639,40 @@ class NexusPeripheralsApp(tk.Tk):
             pady=6,
             anchor=tk.W
         )
-        self.lbl_portal_banner.pack(fill=tk.X, padx=25, pady=(15, 10))
+        self.lbl_portal_banner.pack(fill=tk.X, padx=25, pady=(15, 8))
+
+        # Quick Saved Profile Fast-Selector Bar
+        self.saved_profile_bar = tk.Frame(self.auth_card, bg="#F0FDF4", bd=1, relief=tk.SOLID)
+        self.saved_profile_bar.pack(fill=tk.X, padx=25, pady=(0, 8), ipady=3)
+
+        tk.Label(
+            self.saved_profile_bar,
+            text="⚡ Saved Accounts:",
+            font=("Segoe UI", 9, "bold"),
+            bg="#F0FDF4",
+            fg="#166534"
+        ).pack(side=tk.LEFT, padx=(10, 6))
+
+        self.combo_saved_profiles = ttk.Combobox(
+            self.saved_profile_bar,
+            state="readonly",
+            width=46,
+            font=("Segoe UI", 9)
+        )
+        self.combo_saved_profiles.pack(side=tk.LEFT, padx=(0, 6))
+        self.combo_saved_profiles.bind("<<ComboboxSelected>>", self._on_saved_profile_selected)
+
+        tk.Button(
+            self.saved_profile_bar,
+            text="⚡ Auto-Fill & Login",
+            font=("Segoe UI", 8, "bold"),
+            bg="#16A34A",
+            fg="#FFFFFF",
+            relief=tk.FLAT,
+            padx=8,
+            pady=2,
+            command=self._quick_login_selected_profile
+        ).pack(side=tk.LEFT)
 
         # Customer dynamic toggle (Only visible in CUSTOMER role)
         self.cust_mode_frame = tk.Frame(self.auth_card, bg=self.CARD_BG)
@@ -472,7 +701,7 @@ class NexusPeripheralsApp(tk.Tk):
 
         # Fields Grid Frame
         self.fields_frame = tk.Frame(self.auth_card, bg=self.CARD_BG)
-        self.fields_frame.pack(fill=tk.X, padx=25, pady=8)
+        self.fields_frame.pack(fill=tk.X, padx=25, pady=6)
 
         # Username / Email
         self.lbl_username = tk.Label(self.fields_frame, text="Email Address *", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG)
@@ -485,6 +714,23 @@ class NexusPeripheralsApp(tk.Tk):
         self.lbl_password.grid(row=1, column=0, sticky=tk.W, pady=5)
         self.entry_password = ttk.Entry(self.fields_frame, width=38, font=("Segoe UI", 10), show="•")
         self.entry_password.grid(row=1, column=1, sticky=tk.W, pady=5, padx=10)
+
+        self.btn_toggle_pw = tk.Button(
+            self.fields_frame,
+            text="👁 Show",
+            font=("Segoe UI", 8),
+            bg="#F3F4F6",
+            fg="#374151",
+            relief=tk.FLAT,
+            padx=8,
+            pady=1,
+            command=self._toggle_password_visibility
+        )
+        self.btn_toggle_pw.grid(row=1, column=2, sticky=tk.W, pady=5)
+
+        # Keyboard Enter key shortcuts on both credential fields
+        self.entry_email.bind("<Return>", lambda e: self._handle_auth_action())
+        self.entry_password.bind("<Return>", lambda e: self._handle_auth_action())
 
         # Dynamic Registration Fields (Hidden in login/manager/admin)
         self.lbl_fullname = tk.Label(self.fields_frame, text="Full Name *", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG)
@@ -505,6 +751,36 @@ class NexusPeripheralsApp(tk.Tk):
         self.lbl_address = tk.Label(self.fields_frame, text="Shipping Address *", font=("Segoe UI", 9, "bold"), bg=self.CARD_BG)
         self.entry_address = ttk.Entry(self.fields_frame, width=46, font=("Segoe UI", 10))
         self.entry_address.insert(0, "VIT Campus, Men's Hostel Block D, Vellore")
+
+        # Remember Credentials Frame
+        self.remember_frame = tk.Frame(self.auth_card, bg=self.CARD_BG)
+        self.remember_frame.pack(fill=tk.X, padx=25, pady=(2, 6))
+
+        self.var_remember_creds = tk.BooleanVar(value=self.saved_credentials.get("remember_enabled", True))
+        self.chk_remember = tk.Checkbutton(
+            self.remember_frame,
+            text="Remember username/mail & password for this portal",
+            variable=self.var_remember_creds,
+            font=("Segoe UI", 9, "bold"),
+            bg=self.CARD_BG,
+            fg="#1F2937",
+            activebackground=self.CARD_BG,
+            command=self._on_remember_toggle
+        )
+        self.chk_remember.pack(side=tk.LEFT)
+
+        self.btn_forget_creds = tk.Button(
+            self.remember_frame,
+            text="Clear Saved for Role",
+            font=("Segoe UI", 8),
+            bg="#FEE2E2",
+            fg="#991B1B",
+            relief=tk.FLAT,
+            padx=8,
+            pady=1,
+            command=self._forget_saved_credentials
+        )
+        self.btn_forget_creds.pack(side=tk.LEFT, padx=12)
 
         # Action Buttons
         btn_frame = tk.Frame(self.auth_card, bg=self.CARD_BG)
@@ -609,6 +885,7 @@ class NexusPeripheralsApp(tk.Tk):
         ).pack(side=tk.LEFT, padx=3)
 
         # Active Session Details Display
+        # Active Session Details Display
         self.customer_info_lbl = tk.Label(
             self.auth_card,
             text="No active session. Please log in or register above.",
@@ -619,6 +896,15 @@ class NexusPeripheralsApp(tk.Tk):
         )
         self.customer_info_lbl.pack(anchor=tk.W, padx=25, pady=(4, 15))
 
+        # Initialize saved profiles dropdown and auto-populate remembered credentials
+        self._refresh_saved_profiles_dropdown()
+        initial_role = self.saved_credentials.get("last_role", "ADMIN")
+        if initial_role in ["CUSTOMER", "WAREHOUSE_MANAGER", "ADMIN"]:
+            self.portal_role_var.set(initial_role)
+            self._on_portal_role_switched()
+        else:
+            self._load_credentials_for_role(self.portal_role_var.get())
+
     def _quick_fill_auth(self, role: str, username: str, password: str):
         self.portal_role_var.set(role)
         self._on_portal_role_switched()
@@ -626,6 +912,8 @@ class NexusPeripheralsApp(tk.Tk):
         self.entry_email.insert(0, username)
         self.entry_password.delete(0, tk.END)
         self.entry_password.insert(0, password)
+        if hasattr(self, "var_remember_creds") and self.var_remember_creds.get():
+            self._save_credentials_for_role(role, username, password)
 
     def _on_portal_role_switched(self):
         role = self.portal_role_var.get()
@@ -655,6 +943,10 @@ class NexusPeripheralsApp(tk.Tk):
             self.cust_mode_frame.pack_forget()
             self._hide_registration_fields()
             self.btn_auth_action.config(text="Administrator Login", bg="#DC2626")
+
+        # Automatically auto-populate remembered credentials for the switched role
+        if self.auth_mode_var.get() == "login":
+            self._load_credentials_for_role(role)
 
     def _on_auth_mode_change(self):
         if self.portal_role_var.get() != "CUSTOMER":
@@ -713,7 +1005,7 @@ class NexusPeripheralsApp(tk.Tk):
         if portal == "CUSTOMER":
             self._handle_customer_auth(identifier, password, hashed_pw)
         else:
-            self._handle_staff_auth(identifier, hashed_pw, expected_role=portal)
+            self._handle_staff_auth(identifier, password, hashed_pw, expected_role=portal)
 
     def _handle_customer_auth(self, email: str, raw_password: str, hashed_pw: str):
         mode = self.auth_mode_var.get()
@@ -738,6 +1030,7 @@ class NexusPeripheralsApp(tk.Tk):
                     return
 
                 if existing_user["PasswordHash"] == hashed_pw:
+                    self._save_credentials_for_role("CUSTOMER", email, raw_password, existing_user.get("FullName"))
                     self._start_user_session("CUSTOMER", existing_user)
                     messagebox.showinfo("Login Success", f"Welcome back, {existing_user['FullName']}!")
                 else:
@@ -776,6 +1069,7 @@ class NexusPeripheralsApp(tk.Tk):
 
                 cursor.execute("SELECT * FROM CUSTOMER WHERE CustomerID = %s", (new_customer_id,))
                 new_user = cursor.fetchone()
+                self._save_credentials_for_role("CUSTOMER", email, raw_password, fullname)
                 self._start_user_session("CUSTOMER", new_user)
                 messagebox.showinfo(
                     "Registration Successful",
@@ -788,7 +1082,7 @@ class NexusPeripheralsApp(tk.Tk):
         except Exception as e:
             messagebox.showerror("Database Error", f"Authentication error: {str(e)}")
 
-    def _handle_staff_auth(self, identifier: str, hashed_pw: str, expected_role: str):
+    def _handle_staff_auth(self, identifier: str, raw_password: str, hashed_pw: str, expected_role: str):
         try:
             conn = get_db_connection(self.db_config)
             cursor = conn.cursor(dictionary=True)
@@ -818,6 +1112,7 @@ class NexusPeripheralsApp(tk.Tk):
                         self.entry_email.delete(0, tk.END)
                         self.entry_email.insert(0, identifier)
                         if cust_match["PasswordHash"] == hashed_pw:
+                            self._save_credentials_for_role("CUSTOMER", identifier, raw_password, cust_match.get("FullName"))
                             self._start_user_session("CUSTOMER", cust_match)
                             messagebox.showinfo("Customer Login Success", f"Welcome back, {cust_match['FullName']}!\nYou are logged into the Customer Portal.")
                         else:
@@ -851,6 +1146,7 @@ class NexusPeripheralsApp(tk.Tk):
                 return
 
             if staff_user["PasswordHash"] == hashed_pw:
+                self._save_credentials_for_role(expected_role, identifier, raw_password, staff_user.get("FullName"))
                 self._start_user_session(expected_role, staff_user)
                 role_title = "Warehouse Manager" if expected_role == "WAREHOUSE_MANAGER" else "System Administrator"
                 messagebox.showinfo("Staff Login Success", f"Welcome, {staff_user['FullName']}!\nRole: {role_title}")
@@ -935,6 +1231,7 @@ class NexusPeripheralsApp(tk.Tk):
         self._apply_role_tab_visibility()
         self.notebook.select(self.tab_auth)
         self.set_status("User logged out.")
+        self._load_credentials_for_role(self.portal_role_var.get())
         messagebox.showinfo("Logged Out", "Session ended successfully.")
 
     # -------------------------------------------------------------------------

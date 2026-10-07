@@ -281,4 +281,25 @@ The platform includes an asynchronous transactional email notification subsystem
    - Non-Blocking Operations: All dispatches are executed on background daemon threads, guaranteeing sub-second ACID transaction commit times and responsive UI interactions.
    - Outbox Simulation Logger: If live SMTP credentials are not configured, the system automatically routes all outgoing mail through a simulated outbox logger (`logs/email_notifications.log`) and displays telemetry inside the in-app Mailer and Outbox dialog.
 
+---
+
+## 11. Credential Persistence and Remember-Me Fast Login
+
+To eliminate repetitive manual entry of usernames, emails, and passwords across roles and evaluations:
+
+1. Automatic Role-Based Caching:
+   - Remembers the last-authenticated credentials independently for Customer, Warehouse Manager, and System Administrator portals.
+   - Switching portal tabs or launching the application automatically restores and populates the username/email and password fields for the active role.
+
+2. Saved Accounts and Fast Profile Selector:
+   - Provides a fast-selector dropdown pre-populated with standard staff and customer accounts (Admin, Samarth Hub Manager, Chennai, Bengaluru, Mumbai, Customer).
+   - Features an "Instant Login" action that applies credentials and authenticates with a single click.
+
+3. User Controls and Security:
+   - Toggle Checkbox: A "Remember username/mail and password" checkbox allows users to enable or disable persistence at will.
+   - Show/Hide Password Toggle: An inline toggle button reveals or masks the password input for verification.
+   - Clear Saved Action: A "Clear Saved for Role" button allows users to immediately purge cached credentials from disk.
+   - Keyboard Acceleration: Pressing the Return / Enter key in either the username or password field automatically triggers authentication.
+
+
 
