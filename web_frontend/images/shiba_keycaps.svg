@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0a0a14"/>
+    </radialGradient>
+    <linearGradient id="cap1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F5E6D3"/>
+      <stop offset="100%" stop-color="#D4B896"/>
+    </linearGradient>
+    <linearGradient id="cap2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E8B4B8"/>
+      <stop offset="100%" stop-color="#C48B8B"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)"/>
+  <!-- Keycaps arranged -->
+  <g transform="translate(80,100)">
+    <rect x="0" y="0" width="52" height="52" rx="8" fill="url(#cap1)" opacity="0.95"/>
+    <rect x="4" y="4" width="44" height="44" rx="6" fill="url(#cap1)" filter="url(#glow)"/>
+    <text x="26" y="32" text-anchor="middle" fill="#8B6914" font-size="18" font-weight="bold" font-family="sans-serif">S</text>
+  </g>
+  <g transform="translate(142,100)">
+    <rect x="0" y="0" width="52" height="52" rx="8" fill="url(#cap2)" opacity="0.95"/>
+    <rect x="4" y="4" width="44" height="44" rx="6" fill="url(#cap2)" filter="url(#glow)"/>
+    <text x="26" y="32" text-anchor="middle" fill="#7A3B3B" font-size="18" font-weight="bold" font-family="sans-serif">H</text>
+  </g>
+  <g transform="translate(204,100)">
+    <rect x="0" y="0" width="52" height="52" rx="8" fill="url(#cap1)" opacity="0.95"/>
+    <rect x="4" y="4" width="44" height="44" rx="6" fill="url(#cap1)" filter="url(#glow)"/>
+    <text x="26" y="32" text-anchor="middle" fill="#8B6914" font-size="18" font-weight="bold" font-family="sans-serif">I</text>
+  </g>
+  <g transform="translate(111,160)">
+    <rect x="0" y="0" width="52" height="52" rx="8" fill="url(#cap2)" opacity="0.95"/>
+    <rect x="4" y="4" width="44" height="44" rx="6" fill="url(#cap2)" filter="url(#glow)"/>
+    <text x="26" y="32" text-anchor="middle" fill="#7A3B3B" font-size="18" font-weight="bold" font-family="sans-serif">B</text>
+  </g>
+  <g transform="translate(173,160)">
+    <rect x="0" y="0" width="52" height="52" rx="8" fill="url(#cap1)" opacity="0.95"/>
+    <rect x="4" y="4" width="44" height="44" rx="6" fill="url(#cap1)" filter="url(#glow)"/>
+    <text x="26" y="32" text-anchor="middle" fill="#8B6914" font-size="18" font-weight="bold" font-family="sans-serif">A</text>
+  </g>
+  <!-- Shiba novelty keycap -->
+  <g transform="translate(120,230)">
+    <rect x="0" y="0" width="80" height="80" rx="12" fill="#FFEAA7" opacity="0.9"/>
+    <circle cx="30" cy="35" r="6" fill="#2D1F00"/>
+    <circle cx="50" cy="35" r="6" fill="#2D1F00"/>
+    <ellipse cx="40" cy="48" rx="8" ry="5" fill="#E17055"/>
+    <path d="M22,18 L15,4 L30,16 Z" fill="#FFEAA7" stroke="#D4A84B" stroke-width="1.5"/>
+    <path d="M58,18 L65,4 L50,16 Z" fill="#FFEAA7" stroke="#D4A84B" stroke-width="1.5"/>
+    <text x="40" y="72" text-anchor="middle" fill="#8B6914" font-size="9" font-weight="600" font-family="sans-serif">80s RETRO</text>
+  </g>
+  <text x="200" y="350" text-anchor="middle" fill="#94A3B8" font-size="11" font-family="sans-serif" opacity="0.6">SHIBA 80s RETRO KEYCAP SET</text>
+</svg>

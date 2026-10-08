@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Peripherals — Multi-Warehouse Inventory & Proximity Routing System</title>
+  <meta name="description" content="Next-generation E-Commerce & Multi-Warehouse Fulfillment Platform for custom mechanical keyboards and components.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Core Design System Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+
+  <!-- =========================================================================
+       GLOBAL APP HEADER & ROLE SWITCHER
+       ========================================================================= -->
+  <header class="app-header" id="app-header">
+    <div class="header-left">
+      <div class="brand-logo" id="brand-logo">
+        <div class="logo-glyph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M4 4L12 12L4 20" stroke="url(#cyanGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20 4L12 12L20 20" stroke="url(#indigoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="cyanGrad" x1="4" y1="4" x2="12" y2="12" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#06B6D4"/>
+                <stop offset="1" stop-color="#3B82F6"/>
+              </linearGradient>
+              <linearGradient id="indigoGrad" x1="12" y1="12" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6366F1"/>
+                <stop offset="1" stop-color="#A855F7"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">NEXUS<span class="brand-highlight">PERIPHERALS</span></span>
+          <span class="brand-subtitle">Multi-Warehouse Proximity Routing</span>
+        </div>
+      </div>
+
+      <!-- Quick Search Bar -->
+      <div class="search-container">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="global-search-input" placeholder="Search keyboards, linear switches, keycaps..." autocomplete="off">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Fast Profile Switcher -->
+      <div class="role-selector-pill">
+        <label for="active-profile-select" class="profile-label">
+          <span class="pulse-dot"></span> Profile:
+        </label>
+        <select id="active-profile-select" class="custom-select">
+          <option value="CUSTOMER">👤 Customer (Rohan - rohan@gmail.com)</option>
+          <option value="MANAGER_BLR">🏭 Bengaluru Hub Mgr (manager_bengaluru)</option>
+          <option value="MANAGER_MAA">🏭 Chennai Hub Mgr (Samarth - samarth@gmail.com)</option>
+          <option value="MANAGER_BOM">🏭 Mumbai Hub Mgr (manager_mumbai)</option>
+          <option value="ADMIN">🛡️ System Administrator (admin)</option>
+        </select>
+      </div>
+
+      <!-- Active Portal Tabs -->
+      <nav class="portal-nav" id="portal-nav">
+        <button class="nav-tab active" data-portal="customer" id="nav-btn-customer">
+          <span class="tab-icon">🛍️</span> Storefront
+        </button>
+        <button class="nav-tab" data-portal="manager" id="nav-btn-manager">
+          <span class="tab-icon">🏭</span> Hub Operations
+        </button>
+        <button class="nav-tab" data-portal="admin" id="nav-btn-admin">
+          <span class="tab-icon">📈</span> Executive EDA
+        </button>
+      </nav>
+
+      <!-- Cart Trigger Button -->
+      <button class="cart-trigger-btn" id="open-cart-modal-btn" aria-label="Open Cart">
+        <div class="cart-icon-wrapper">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cart-item-count-badge">0</span>
+        </div>
+        <div class="cart-summary-text">
+          <span class="cart-label">Cart</span>
+          <span class="cart-amount" id="cart-subtotal-header">₹0</span>
+        </div>
+      </button>
+
+      <!-- Outbox Telemetry Launcher -->
+      <button class="header-action-btn" id="open-outbox-btn" title="View Mailer Telemetry & Outbox">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN PORTAL CONTAINER
+       ========================================================================= -->
+  <main class="app-main-content">
+
+    <!-- =======================================================================
+         PORTAL 1: CUSTOMER STOREFRONT & PROXIMITY ROUTER
+         ======================================================================= -->
+    <section class="portal-view active" id="portal-customer-view">
+      
+      <!-- Customer Banner & Location Bar -->
+      <div class="customer-location-strip">
+        <div class="location-picker">
+          <span class="location-pin">📍</span>
+          <span class="location-label">Delivery Destination:</span>
+          <select id="customer-city-select" class="custom-select city-select">
+            <option value="Vellore" selected>Vellore, Tamil Nadu (Lat: 12.9165, Lon: 79.1325)</option>
+            <option value="Bengaluru">Bengaluru, Karnataka (Lat: 12.9716, Lon: 77.5946)</option>
+            <option value="Chennai">Chennai, Tamil Nadu (Lat: 13.0827, Lon: 80.2707)</option>
+            <option value="Mumbai">Mumbai, Maharashtra (Lat: 19.0760, Lon: 72.8777)</option>
+            <option value="Hyderabad">Hyderabad, Telangana (Lat: 17.3850, Lon: 78.4867)</option>
+            <option value="Delhi">Delhi, NCR (Lat: 28.7041, Lon: 77.1025)</option>
+            <option value="Coimbatore">Coimbatore, Tamil Nadu (Lat: 11.0168, Lon: 76.9558)</option>
+          </select>
+        </div>
+        <div class="location-status-badge" id="proximity-routing-summary-badge">
+          <span class="sparkle-icon">🧭</span> Nearest Hub: Evaluating Geodesic Distance...
+        </div>
+      </div>
+
+      <div class="storefront-layout">
+        
+        <!-- Left: Product Catalog & Filtering -->
+        <div class="catalog-main">
+          
+          <div class="catalog-controls">
+            <div class="category-pills" id="category-filter-pills">
+              <button class="pill-btn active" data-category="ALL">All Components</button>
+              <button class="pill-btn" data-category="1">Mechanical Keyboards</button>
+              <button class="pill-btn" data-category="2">Switches</button>
+              <button class="pill-btn" data-category="3">Keycaps</button>
+              <button class="pill-btn" data-category="4">Lube & Accessories</button>
+            </div>
+            <div class="catalog-meta">
+              <span id="product-count-display">Showing 10 components</span>
+            </div>
+          </div>
+
+          <!-- Product Card Grid -->
+          <div class="product-grid" id="product-card-grid">
+            <!-- Dynamic products rendered by app.js -->
+          </div>
+        </div>
+
+        <!-- Right: Proximity Router & Routing Telemetry Widget -->
+        <aside class="proximity-sidebar">
+          
+          <div class="glass-card proximity-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3 class="card-title">Warehouse Proximity Routing</h3>
+                <span class="card-subtitle">Haversine Geodesic Distance Analysis</span>
+              </div>
+              <span class="badge badge-glow">LIVE ACID</span>
+            </div>
+
+            <!-- Vector Proximity Radar Map -->
+            <div class="proximity-radar-map" id="proximity-radar-map">
+              <div class="map-grid-bg"></div>
+              
+              <!-- Customer Pin -->
+              <div class="map-node customer-node" id="map-customer-node" style="top: 54%; left: 45%;">
+                <div class="node-ripple"></div>
+                <div class="node-icon">👤</div>
+                <span class="node-label" id="map-customer-city-label">Vellore</span>
+              </div>
+
+              <!-- Warehouse Nodes -->
+              <div class="map-node wh-node maa-node" style="top: 52%; left: 62%;" title="South Fulfillment Hub (Chennai)">
+                <div class="node-icon">🏭</div>
+                <span class="node-label">Chennai Hub #1</span>
+              </div>
+
+              <div class="map-node wh-node blr-node optimal-node" style="top: 60%; left: 35%;" title="Tech Corridor Hub (Bengaluru)">
+                <div class="node-icon">🏭</div>
+                <span class="node-label">Bengaluru Hub #2</span>
+              </div>
+
+              <div class="map-node wh-node bom-node" style="top: 32%; left: 22%;" title="West Distribution Center (Mumbai)">
+                <div class="node-icon">🏭</div>
+                <span class="node-label">Mumbai Hub #3</span>
+              </div>
+
+              <!-- SVG Connection Lines -->
+              <svg class="map-lines-svg" id="map-lines-svg">
+                <line id="line-customer-maa" x1="45%" y1="54%" x2="62%" y2="52%" class="routing-line eligible"/>
+                <line id="line-customer-blr" x1="45%" y1="54%" x2="35%" y2="60%" class="routing-line optimal"/>
+                <line id="line-customer-bom" x1="45%" y1="54%" x2="22%" y2="32%" class="routing-line eligible"/>
+              </svg>
+            </div>
+
+            <!-- Candidate Warehouses Distance Cards -->
+            <div class="candidate-hubs-list" id="candidate-hubs-list">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <div class="routing-decision-banner" id="routing-decision-banner">
+              <div class="decision-icon">✓</div>
+              <div class="decision-text">
+                <strong>Optimal Route Selected:</strong> Orders dispatching from closest warehouse with 100% cart availability.
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-full checkout-trigger-btn" id="sidebar-proceed-checkout-btn">
+              Proceed to Proximity Checkout &rarr;
+            </button>
+          </div>
+
+          <!-- Quick Shopping Cart Mini-Drawer -->
+          <div class="glass-card mini-cart-card">
+            <div class="card-header">
+              <h3 class="card-title">Shopping Cart Review</h3>
+              <button class="btn-text" id="clear-mini-cart-btn">Clear</button>
+            </div>
+            <div class="mini-cart-items-list" id="mini-cart-items-list">
+              <div class="empty-cart-message">
+                <span class="empty-icon">🛒</span>
+                <p>Your shopping cart is empty.<br>Click "Add to Cart" on any keyboard component.</p>
+              </div>
+            </div>
+            <div class="mini-cart-footer">
+              <div class="subtotal-row">
+                <span>Grand Total:</span>
+                <span class="subtotal-val" id="mini-cart-grand-total">₹0.00</span>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         PORTAL 2: WAREHOUSE MANAGER OPERATIONS
+         ======================================================================= -->
+    <section class="portal-view" id="portal-manager-view">
+      
+      <div class="manager-hub-header">
+        <div class="hub-info-block">
+          <div class="hub-icon-box">🏭</div>
+          <div class="hub-details">
+            <div class="hub-title-row">
+              <h2 class="hub-name" id="current-manager-hub-name">Tech Corridor Hub #2 — Bengaluru</h2>
+              <span class="badge badge-success">STAFF ACTIVE</span>
+            </div>
+            <p class="hub-subtitle">Assigned Hub Manager: <strong>Samarth</strong> (<span id="current-manager-email">samarth@gmail.com</span>) • Geodesic Lat: 12.9716, Lon: 77.5946</p>
+          </div>
+        </div>
+
+        <div class="hub-actions-bar">
+          <button class="btn btn-secondary" id="open-restock-modal-btn">
+            <span>➕</span> Record Restock Intake
+          </button>
+          <button class="btn btn-primary" id="refresh-hub-inventory-btn">
+            <span>🔄</span> Sync Live Inventory
+          </button>
+        </div>
+      </div>
+
+      <!-- Manager Grid: Bins + Kanban Pipeline -->
+      <div class="manager-layout-grid">
+        
+        <!-- Left: Inventory Bins & Low Stock Monitor -->
+        <div class="glass-card inventory-bins-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Warehouse Bin Inventory Matrix</h3>
+              <span class="card-subtitle">Real-time Stock Levels vs. Safety Reorder Thresholds</span>
+            </div>
+            <span class="badge badge-warning" id="low-stock-count-badge">2 Low Stock Warnings</span>
+          </div>
+
+          <div class="bin-table-container">
+            <table class="data-table" id="hub-inventory-table">
+              <thead>
+                <tr>
+                  <th>Component</th>
+                  <th>SKU</th>
+                  <th>Units In Bin</th>
+                  <th>Reorder Level</th>
+                  <th>Safety Status</th>
+                  <th>Quick Restock</th>
+                </tr>
+              </thead>
+              <tbody id="hub-inventory-table-body">
+                <!-- Dynamically generated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: Dispatch Pipeline Kanban Board -->
+        <div class="glass-card kanban-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Fulfillment & Shipment Pipeline</h3>
+              <span class="card-subtitle">Live Manifest Tracking & Courier Status Transitions</span>
+            </div>
+            <span class="badge badge-info">4 Active Dispatches</span>
+          </div>
+
+          <div class="kanban-board-container" id="kanban-board-container">
+            
+            <!-- Column 1: Preparing -->
+            <div class="kanban-column" data-status="PREPARING">
+              <div class="kanban-col-header">
+                <span class="col-dot dot-amber"></span>
+                <span class="col-title">Preparing</span>
+                <span class="col-count" id="count-col-preparing">1</span>
+              </div>
+              <div class="kanban-col-cards" id="kanban-col-preparing"></div>
+            </div>
+
+            <!-- Column 2: In Transit -->
+            <div class="kanban-column" data-status="IN_TRANSIT">
+              <div class="kanban-col-header">
+                <span class="col-dot dot-blue"></span>
+                <span class="col-title">In Transit</span>
+                <span class="col-count" id="count-col-in-transit">1</span>
+              </div>
+              <div class="kanban-col-cards" id="kanban-col-in-transit"></div>
+            </div>
+
+            <!-- Column 3: Out for Delivery -->
+            <div class="kanban-column" data-status="OUT_FOR_DELIVERY">
+              <div class="kanban-col-header">
+                <span class="col-dot dot-indigo"></span>
+                <span class="col-title">Out for Delivery</span>
+                <span class="col-count" id="count-col-out-delivery">1</span>
+              </div>
+              <div class="kanban-col-cards" id="kanban-col-out-delivery"></div>
+            </div>
+
+            <!-- Column 4: Delivered -->
+            <div class="kanban-column" data-status="DELIVERED">
+              <div class="kanban-col-header">
+                <span class="col-dot dot-emerald"></span>
+                <span class="col-title">Delivered</span>
+                <span class="col-count" id="count-col-delivered">1</span>
+              </div>
+              <div class="kanban-col-cards" id="kanban-col-delivered"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- =======================================================================
+         PORTAL 3: SYSTEM ADMINISTRATOR SUITE & EDA ANALYTICS
+         ======================================================================= -->
+    <section class="portal-view" id="portal-admin-view">
+      
+      <!-- Executive KPI Cards -->
+      <div class="kpi-stat-grid">
+        <div class="glass-card kpi-card">
+          <div class="kpi-icon-box cyan-glow">₹</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Gross Platform Revenue</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-gross-revenue">₹1,42,85,600</span>
+              <span class="kpi-trend positive">+18.4%</span>
+            </div>
+            <span class="kpi-caption">ACID transactions committed</span>
+          </div>
+        </div>
+
+        <div class="glass-card kpi-card">
+          <div class="kpi-icon-box blue-glow">🛒</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Total Completed Orders</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-total-orders">1,842</span>
+              <span class="kpi-trend positive">+12.1%</span>
+            </div>
+            <span class="kpi-caption">Across all 3 distribution hubs</span>
+          </div>
+        </div>
+
+        <div class="glass-card kpi-card">
+          <div class="kpi-icon-box purple-glow">🏭</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Fulfillment Warehouses</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-hubs-count">3 Hubs</span>
+              <span class="kpi-trend neutral">100% Online</span>
+            </div>
+            <span class="kpi-caption">Chennai, Bengaluru, Mumbai</span>
+          </div>
+        </div>
+
+        <div class="glass-card kpi-card">
+          <div class="kpi-icon-box emerald-glow">⏱️</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Average Fulfillment Time</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-avg-time">14.6 hrs</span>
+              <span class="kpi-trend positive">-3.2 hrs</span>
+            </div>
+            <span class="kpi-caption">Nearest-hub proximity routing</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDA Top Action Bar -->
+      <div class="admin-action-bar">
+        <div class="action-bar-left">
+          <span class="eda-title">Exploratory Data Analysis (EDA)</span>
+          <span class="eda-period">Fiscal Period: 2024 (January - June)</span>
+        </div>
+        <div class="action-bar-right">
+          <button class="btn btn-secondary" id="admin-broadcast-directive-btn">
+            <span>✉️</span> Broadcast Directive to Hub Managers
+          </button>
+          <button class="btn btn-primary" id="admin-download-pdf-btn">
+            <span>📥</span> Export Monthly Audit PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- EDA Visual Charts Grid -->
+      <div class="eda-charts-grid">
+        
+        <!-- Chart 1: Dual-Axis Trend (Sales Revenue vs Intake Volume) -->
+        <div class="glass-card chart-card large-chart">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Monthly Operations Trend: Revenue vs. Intake</h3>
+              <span class="card-subtitle">Sales Revenue (₹ in Thousands) vs. Restock Intake Volume (Units)</span>
+            </div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot cyan"></span> Sales Revenue (₹)</span>
+              <span class="legend-item"><span class="legend-dot purple"></span> Restock Intake (Qty)</span>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="canvas-operations-trend" height="280"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Category Revenue Donut Chart -->
+        <div class="glass-card chart-card donut-chart">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Category Revenue Share</h3>
+              <span class="card-subtitle">Gross Sales by Component Category</span>
+            </div>
+          </div>
+          <div class="chart-canvas-container donut-container">
+            <canvas id="canvas-category-donut" height="220"></canvas>
+            <div class="donut-center-metric">
+              <span class="metric-val">₹1.42 Cr</span>
+              <span class="metric-lbl">Total Sales</span>
+            </div>
+          </div>
+          <div class="category-breakdown-legend" id="category-breakdown-legend">
+            <!-- Dynamic Category Percentages -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Admin Table: Top Performing SKUs -->
+      <div class="glass-card top-skus-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Top Performing Components by Volume & Gross Revenue</h3>
+            <span class="card-subtitle">Real-time Ranking from ORDER_ITEM Aggregations</span>
+          </div>
+          <span class="badge badge-success">TOP PERFORMERS</span>
+        </div>
+        <div class="bin-table-container">
+          <table class="data-table" id="top-skus-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Component Name</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Units Sold</th>
+                <th>Gross Revenue (₹)</th>
+                <th>Velocity Rating</th>
+              </tr>
+            </thead>
+            <tbody id="top-skus-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       MODAL 1: PROXIMITY CHECKOUT & ACID TRANSACTION CONSOLE
+       ========================================================================= -->
+  <div class="modal-backdrop" id="checkout-modal-backdrop">
+    <div class="modal-card checkout-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 class="modal-title">Nearest-Warehouse Proximity Checkout</h2>
+          <span class="modal-subtitle">Atomic Multi-Item ACID Commit & Geodesic Routing</span>
+        </div>
+        <button class="modal-close-btn" id="close-checkout-modal-btn">&times;</button>
+      </div>
+
+      <div class="modal-body-split">
+        
+        <!-- Left: Routing Decision & Geodesic Calculation -->
+        <div class="modal-col modal-col-routing">
+          <div class="route-summary-box" id="modal-route-summary-box">
+            <div class="route-hub-badge">★ OPTIMAL HUB SELECTED</div>
+            <h3 class="route-hub-name" id="modal-chosen-hub-name">Tech Corridor Hub — Bengaluru</h3>
+            <p class="route-hub-stats" id="modal-chosen-hub-stats">
+              Geodesic Distance: <strong>164.2 km</strong> from Vellore<br>
+              Stock Status: <strong class="text-emerald">100% In Stock</strong> for all cart items!
+            </p>
+          </div>
+
+          <h4 class="section-title">Itemized Order Manifest:</h4>
+          <div class="modal-cart-items-scroll" id="modal-checkout-items-list">
+            <!-- Rendered by JS -->
+          </div>
+
+          <div class="payment-method-selector">
+            <h4 class="section-title">Select Payment Method:</h4>
+            <div class="payment-options-grid">
+              <label class="pay-option active">
+                <input type="radio" name="pay_method" value="UPI" checked>
+                <span class="pay-icon">📱</span>
+                <span class="pay-name">UPI / QR Code</span>
+              </label>
+              <label class="pay-option">
+                <input type="radio" name="pay_method" value="CARD">
+                <span class="pay-icon">💳</span>
+                <span class="pay-name">Credit / Debit Card</span>
+              </label>
+              <label class="pay-option">
+                <input type="radio" name="pay_method" value="NETBANKING">
+                <span class="pay-icon">🏦</span>
+                <span class="pay-name">NetBanking</span>
+              </label>
+              <label class="pay-option">
+                <input type="radio" name="pay_method" value="COD">
+                <span class="pay-icon">💵</span>
+                <span class="pay-name">Cash on Delivery</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-total-banner">
+            <span>Amount Payable:</span>
+            <span class="modal-total-val" id="modal-checkout-grand-total">₹0.00</span>
+          </div>
+
+          <button class="btn btn-success btn-full btn-large" id="confirm-acid-order-btn">
+            ⚡ Confirm Atomic Order (ACID Commit)
+          </button>
+        </div>
+
+        <!-- Right: ACID Transaction Live Telemetry Terminal -->
+        <div class="modal-col modal-col-terminal">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="t-dot t-red"></span>
+              <span class="t-dot t-yellow"></span>
+              <span class="t-dot t-green"></span>
+            </div>
+            <span class="terminal-title">MySQL 8.0 ACID Transaction Console</span>
+          </div>
+          <div class="terminal-screen" id="acid-terminal-screen">
+            <div class="t-line t-dim">-- Nexus Peripherals ACID Transaction Console Ready --</div>
+            <div class="t-line t-dim">-- Click 'Confirm Atomic Order' to start sequence --</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 2: ADMIN DIRECTIVE EMAIL DISPATCH
+       ========================================================================= -->
+  <div class="modal-backdrop" id="directive-modal-backdrop">
+    <div class="modal-card directive-modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Executive Operational Directive</h2>
+          <span class="modal-subtitle">Dispatch High-Priority Directives to Warehouse Hub Managers</span>
+        </div>
+        <button class="modal-close-btn" id="close-directive-modal-btn">&times;</button>
+      </div>
+
+      <div class="modal-body-form">
+        <div class="form-row">
+          <label>Target Hub Manager Recipient:</label>
+          <select id="directive-recipient-select" class="custom-select">
+            <option value="ALL">[BROADCAST TO ALL WAREHOUSE MANAGERS]</option>
+            <option value="samarth@gmail.com">Samarth — Chennai Hub (samarth@gmail.com)</option>
+            <option value="bengaluru@nexus.internal">Bengaluru Hub Manager (manager_bengaluru)</option>
+            <option value="mumbai@nexus.internal">Mumbai Hub Manager (manager_mumbai)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Urgency Priority Level:</label>
+          <select id="directive-priority-select" class="custom-select">
+            <option value="NORMAL">Normal Priority</option>
+            <option value="HIGH" selected>High Priority (Operational Notice)</option>
+            <option value="CRITICAL">Critical Emergency (Immediate Fulfillment Restock)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Directive Subject Line:</label>
+          <input type="text" id="directive-subject-input" class="text-input" value="Annual Inventory Restock Audit & Switch Intake Protocols">
+        </div>
+
+        <div class="form-row">
+          <label>Operational Instructions Body:</label>
+          <textarea id="directive-body-input" class="textarea-input" rows="6">Please execute a bin-level physical inventory count of all mechanical switch variants (Gateron Oil King, Zephyr Linear) before end of day. Any discrepancy exceeding 2 units must be escalated to Administration.</textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" id="cancel-directive-btn">Cancel</button>
+          <button class="btn btn-primary" id="send-directive-email-btn">
+            <span>✉️</span> Dispatch Asynchronous Directive via SMTP
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 3: RESTOCK INTAKE BATCH
+       ========================================================================= -->
+  <div class="modal-backdrop" id="restock-modal-backdrop">
+    <div class="modal-card restock-modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Record Warehouse Stock Intake</h2>
+          <span class="modal-subtitle">Restock Batch & Supplier Delivery Intake</span>
+        </div>
+        <button class="modal-close-btn" id="close-restock-modal-btn">&times;</button>
+      </div>
+
+      <div class="modal-body-form">
+        <div class="form-row">
+          <label>Component to Restock:</label>
+          <select id="restock-product-select" class="custom-select">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Intake Units (Quantity):</label>
+          <input type="number" id="restock-qty-input" class="text-input" value="50" min="1" max="1000">
+        </div>
+
+        <div class="form-row">
+          <label>Supplier / Batch Identifier:</label>
+          <input type="text" id="restock-supplier-input" class="text-input" value="Gateron Factory Direct (Batch #NX-2024-B8)">
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" id="cancel-restock-btn">Cancel</button>
+          <button class="btn btn-success" id="confirm-restock-btn">
+            <span>✓</span> Commit Restock Batch to PRODUCT_INVENTORY
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL 4: SMTP OUTBOX TELEMETRY LOG
+       ========================================================================= -->
+  <div class="modal-backdrop" id="outbox-modal-backdrop">
+    <div class="modal-card outbox-modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">SMTP Mailer Settings & Outbox Audit Manifest</h2>
+          <span class="modal-subtitle">Asynchronous Transactional Email Dispatches</span>
+        </div>
+        <button class="modal-close-btn" id="close-outbox-modal-btn">&times;</button>
+      </div>
+
+      <div class="outbox-telemetry-body">
+        <div class="outbox-config-summary">
+          <span class="config-chip">SMTP Server: <code>smtp.gmail.com:587</code></span>
+          <span class="config-chip">Mode: <strong class="text-emerald">Live / Simulation Fallback</strong></span>
+          <span class="config-chip">Log File: <code>logs/email_notifications.log</code></span>
+        </div>
+
+        <div class="bin-table-container">
+          <table class="data-table" id="outbox-manifest-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Type</th>
+                <th>Recipient</th>
+                <th>Subject</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="outbox-manifest-table-body">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
