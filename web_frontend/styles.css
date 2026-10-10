@@ -4,33 +4,33 @@
    ========================================================================== */
 
 :root {
-  /* Color Palette - Dark Obsidian Glass & Sleek Slates */
-  --bg-app: #070B12;
-  --bg-surface: rgba(15, 23, 42, 0.72);
-  --bg-card: rgba(15, 23, 42, 0.58);
-  --bg-card-hover: rgba(30, 41, 59, 0.72);
-  --bg-glass: rgba(13, 20, 36, 0.52);
-  --border-subtle: rgba(255, 255, 255, 0.1);
-  --border-glow: rgba(6, 182, 212, 0.45);
+  /* Color Palette - Japanese Sakura & Mt. Fuji Theme */
+  --bg-app: #1A1325;
+  --bg-surface: rgba(43, 27, 56, 0.65);
+  --bg-card: rgba(30, 20, 45, 0.55);
+  --bg-card-hover: rgba(56, 36, 76, 0.75);
+  --bg-glass: rgba(20, 15, 35, 0.5);
+  --border-subtle: rgba(255, 182, 193, 0.2); /* Soft pink border */
+  --border-glow: rgba(255, 105, 180, 0.45);
 
   /* Brand Accents */
-  --accent-cyan: #06B6D4;
-  --accent-blue: #3B82F6;
-  --accent-indigo: #6366F1;
-  --accent-purple: #8B5CF6;
-  --accent-pink: #EC4899;
+  --accent-cyan: #FFB7C5; /* Cherry Blossom Pink */
+  --accent-blue: #FF9EBB; /* Deeper Pink */
+  --accent-indigo: #8A64D6; /* Fuji Purple */
+  --accent-purple: #D49BEA; /* Soft lilac */
+  --accent-pink: #FF69B4;
 
   /* Semantic Feedback */
   --status-emerald: #10B981;
   --status-amber: #F59E0B;
   --status-crimson: #EF4444;
-  --status-info: #0284C7;
+  --status-info: #FFB7C5;
 
   /* Text Colors */
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
-  --text-dim: #64748B;
-  --text-glow: #38BDF8;
+  --text-main: #FFF0F5; /* Lavender Blush */
+  --text-muted: #D8BFD8; /* Thistle */
+  --text-dim: #9370DB; /* Medium Purple */
+  --text-glow: #FFC0CB;
 
   /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -41,10 +41,10 @@
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-full: 9999px;
-  --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.25);
-  --shadow-card: 0 12px 35px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --shadow-modal: 0 25px 60px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  --backdrop-blur: blur(20px) saturate(180%);
+  --shadow-glow: 0 0 20px rgba(255, 183, 197, 0.3);
+  --shadow-card: 0 12px 35px -10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 183, 197, 0.15);
+  --shadow-modal: 0 25px 60px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 183, 197, 0.2);
+  --backdrop-blur: blur(25px) saturate(160%);
 }
 
 * {
@@ -61,10 +61,10 @@ body {
   line-height: 1.5;
   overflow-x: hidden;
   background-image: 
-    radial-gradient(circle at 10% 12%, rgba(6, 182, 212, 0.16) 0%, transparent 45%),
-    radial-gradient(circle at 90% 18%, rgba(99, 102, 241, 0.18) 0%, transparent 45%),
-    radial-gradient(circle at 50% 60%, rgba(139, 92, 246, 0.13) 0%, transparent 50%),
-    radial-gradient(circle at 80% 90%, rgba(6, 182, 212, 0.12) 0%, transparent 40%);
+    linear-gradient(to bottom, rgba(26, 19, 37, 0.4), rgba(26, 19, 37, 0.8)),
+    url('images/fuji_sakura_bg.jpg');
+  background-size: cover;
+  background-position: center;
   background-attachment: fixed;
   scroll-behavior: smooth;
 }
@@ -104,12 +104,12 @@ body {
   width: 38px;
   height: 38px;
   border-radius: var(--radius-md);
-  background: rgba(6, 182, 212, 0.1);
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  background: rgba(255, 183, 197, 0.15);
+  border: 1px solid rgba(255, 183, 197, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 14px rgba(6, 182, 212, 0.2);
+  box-shadow: 0 0 14px rgba(255, 183, 197, 0.25);
 }
 
 .brand-title {
@@ -161,7 +161,7 @@ body {
 
 .search-container input:focus {
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 0 10px rgba(255, 183, 197, 0.3);
 }
 
 /* Role Selector Pill */
@@ -242,10 +242,10 @@ body {
 }
 
 .nav-tab.active {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(99, 102, 241, 0.35));
+  background: linear-gradient(135deg, rgba(255, 183, 197, 0.3), rgba(212, 155, 234, 0.4));
   color: #FFFFFF;
-  border: 1px solid rgba(6, 182, 212, 0.4);
-  box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+  border: 1px solid rgba(255, 183, 197, 0.5);
+  box-shadow: 0 0 12px rgba(255, 183, 197, 0.3);
 }
 
 /* Cart Trigger Button */
@@ -254,8 +254,8 @@ body {
   align-items: center;
   gap: 10px;
   padding: 6px 14px;
-  background: linear-gradient(135deg, #1E3A8A, #2563EB);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, #D49BEA, #FF69B4);
+  border: 1px solid rgba(255, 105, 180, 0.5);
   border-radius: var(--radius-full);
   color: #FFFFFF;
   cursor: pointer;
