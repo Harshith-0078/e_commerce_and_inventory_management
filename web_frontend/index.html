@@ -52,13 +52,18 @@
     </div>
 
     <div class="header-right">
-      <!-- Authenticated User Profile Badge -->
-      <div class="user-session-pill" id="user-session-pill">
-        <span class="user-avatar" id="header-user-avatar">👤</span>
-        <div class="user-info">
-          <span class="user-name" id="header-user-name">Guest</span>
-          <span class="user-role-badge" id="header-role-badge">Unauthenticated</span>
-        </div>
+      <!-- Fast Profile Switcher -->
+      <div class="role-selector-pill">
+        <label for="active-profile-select" class="profile-label">
+          <span class="pulse-dot"></span> Profile:
+        </label>
+        <select id="active-profile-select" class="custom-select">
+          <option value="CUSTOMER">👤 Customer (Rohan - rohan@gmail.com)</option>
+          <option value="MANAGER_BLR">🏭 Bengaluru Hub Mgr (manager_bengaluru)</option>
+          <option value="MANAGER_MAA">🏭 Chennai Hub Mgr (Samarth - samarth@gmail.com)</option>
+          <option value="MANAGER_BOM">🏭 Mumbai Hub Mgr (manager_mumbai)</option>
+          <option value="ADMIN">🛡️ System Administrator (admin)</option>
+        </select>
       </div>
 
       <!-- Active Portal Tabs -->
@@ -96,16 +101,6 @@
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
           <polyline points="22,6 12,13 2,6"></polyline>
         </svg>
-      </button>
-
-      <!-- Logout / Switch Account Button -->
-      <button class="header-logout-btn" id="header-logout-btn" title="Log Out / Switch Account">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-          <polyline points="16 17 21 12 16 7"></polyline>
-          <line x1="21" y1="12" x2="9" y2="12"></line>
-        </svg>
-        <span>Logout</span>
       </button>
     </div>
   </header>
@@ -517,159 +512,6 @@
     </section>
 
   </main>
-
-  <!-- =========================================================================
-       MODAL 0: AUTHENTICATION GATEWAY & ROLE LOGIN (Initial Gateway)
-       ========================================================================= -->
-  <div class="modal-backdrop open auth-gateway-backdrop" id="auth-gateway-backdrop">
-    <div class="modal-card auth-modal-card">
-      <div class="auth-header-visual">
-        <div class="auth-logo-circle">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="url(#authSakuraGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 20L12 4L22 20"/>
-            <path d="M8 10L12 14L16 10"/>
-            <circle cx="18" cy="6" r="3" fill="#FFB7C5" stroke="none"/>
-            <defs>
-              <linearGradient id="authSakuraGrad" x1="2" y1="4" x2="22" y2="20" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#FFB7C5"/>
-                <stop offset="1" stop-color="#D49BEA"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <h2 class="auth-brand-title">NEXUS <span class="brand-highlight">PERIPHERALS</span></h2>
-        <p class="auth-brand-desc">Enterprise Multi-Warehouse E-Commerce & Inventory Routing Platform</p>
-      </div>
-
-      <!-- Role Selection Tabs -->
-      <div class="auth-role-tabs">
-        <button type="button" class="auth-role-tab active" data-role="CUSTOMER" id="tab-auth-customer">
-          <span class="role-icon">👤</span> Customer
-        </button>
-        <button type="button" class="auth-role-tab" data-role="MANAGER" id="tab-auth-manager">
-          <span class="role-icon">🏭</span> Hub Manager
-        </button>
-        <button type="button" class="auth-role-tab" data-role="ADMIN" id="tab-auth-admin">
-          <span class="role-icon">🛡️</span> Administrator
-        </button>
-      </div>
-
-      <!-- Quick Fill Demo Pills (For Instant Viva Demonstration) -->
-      <div class="auth-quick-pills">
-        <span class="quick-label">⚡ Quick Fill:</span>
-        <button type="button" class="quick-chip" id="quick-fill-customer">👤 Rohan (Customer)</button>
-        <button type="button" class="quick-chip" id="quick-fill-manager-maa">🏭 Chennai Hub Mgr</button>
-        <button type="button" class="quick-chip" id="quick-fill-manager-blr">🏭 Bengaluru Hub Mgr</button>
-        <button type="button" class="quick-chip" id="quick-fill-admin">🛡️ Admin</button>
-      </div>
-
-      <!-- Role 1: Customer Authentication -->
-      <div class="auth-form-container active" id="form-auth-customer">
-        <div class="auth-sub-toggle">
-          <button type="button" class="auth-sub-tab active" id="customer-sub-signin">Sign In</button>
-          <button type="button" class="auth-sub-tab" id="customer-sub-signup">Register New Account</button>
-        </div>
-
-        <!-- Customer Sign In Form -->
-        <form id="customer-signin-form" class="auth-form">
-          <div class="form-group">
-            <label for="cust-login-email">Email Address</label>
-            <input type="email" id="cust-login-email" class="form-input" placeholder="e.g. rohan@gmail.com" value="rohan@gmail.com" required>
-          </div>
-          <div class="form-group">
-            <label for="cust-login-password">Password (SHA-256 Verified)</label>
-            <input type="password" id="cust-login-password" class="form-input" placeholder="Enter password" value="customer123" required>
-          </div>
-          <button type="submit" class="auth-submit-btn" id="btn-customer-signin">
-            <span>🔓 Sign In to Storefront</span>
-          </button>
-        </form>
-
-        <!-- Customer Register Form -->
-        <form id="customer-signup-form" class="auth-form" style="display: none;">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="cust-reg-name">Full Name</label>
-              <input type="text" id="cust-reg-name" class="form-input" placeholder="Harshith Antyakula" value="Harshith Antyakula">
-            </div>
-            <div class="form-group">
-              <label for="cust-reg-phone">Phone Number</label>
-              <input type="tel" id="cust-reg-phone" class="form-input" placeholder="9876543210" value="9876543210">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="cust-reg-email">Email Address (Unique Key)</label>
-            <input type="email" id="cust-reg-email" class="form-input" placeholder="harshith@vitstudent.ac.in" value="harshith@vitstudent.ac.in">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="cust-reg-city">Delivery City (Geocoding)</label>
-              <select id="cust-reg-city" class="form-select">
-                <option value="Vellore">Vellore (12.9165° N, 79.1325° E)</option>
-                <option value="Chennai">Chennai (13.0827° N, 80.2707° E)</option>
-                <option value="Bengaluru">Bengaluru (12.9716° N, 77.5946° E)</option>
-                <option value="Mumbai">Mumbai (19.0760° N, 72.8777° E)</option>
-                <option value="Hyderabad">Hyderabad (17.3850° N, 78.4867° E)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="cust-reg-password">Password (SHA-256)</label>
-              <input type="password" id="cust-reg-password" class="form-input" placeholder="Create password" value="Secret2026!">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="cust-reg-address">Shipping Address</label>
-            <input type="text" id="cust-reg-address" class="form-input" placeholder="VIT Main Campus, Katpadi Road" value="VIT Main Campus, Katpadi Road, Vellore">
-          </div>
-          <button type="submit" class="auth-submit-btn" id="btn-customer-signup">
-            <span>✨ Complete Registration & Enter</span>
-          </button>
-        </form>
-      </div>
-
-      <!-- Role 2: Manager Authentication -->
-      <div class="auth-form-container" id="form-auth-manager" style="display: none;">
-        <form id="manager-signin-form" class="auth-form">
-          <div class="form-group">
-            <label for="mgr-facility-select">Assigned Fulfillment Hub</label>
-            <select id="mgr-facility-select" class="form-select">
-              <option value="1">South Fulfillment Hub — Chennai (Samarth)</option>
-              <option value="2">Tech Corridor Warehouse — Bengaluru (manager_bengaluru)</option>
-              <option value="3">West Distribution Center — Mumbai (manager_mumbai)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="mgr-login-username">Staff Username</label>
-            <input type="text" id="mgr-login-username" class="form-input" placeholder="manager_chennai" value="manager_chennai" required>
-          </div>
-          <div class="form-group">
-            <label for="mgr-login-password">Password (SHA-256 Verified)</label>
-            <input type="password" id="mgr-login-password" class="form-input" placeholder="Enter password" value="chennai123" required>
-          </div>
-          <button type="submit" class="auth-submit-btn" id="btn-manager-signin">
-            <span>🏭 Authenticate as Hub Manager</span>
-          </button>
-        </form>
-      </div>
-
-      <!-- Role 3: Admin Authentication -->
-      <div class="auth-form-container" id="form-auth-admin" style="display: none;">
-        <form id="admin-signin-form" class="auth-form">
-          <div class="form-group">
-            <label for="admin-login-username">Administrator Username</label>
-            <input type="text" id="admin-login-username" class="form-input" placeholder="admin" value="admin" required>
-          </div>
-          <div class="form-group">
-            <label for="admin-login-password">Administrator Password</label>
-            <input type="password" id="admin-login-password" class="form-input" placeholder="Enter password" value="admin123" required>
-          </div>
-          <button type="submit" class="auth-submit-btn" id="btn-admin-signin">
-            <span>🛡️ Unlock System Admin Suite</span>
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
 
   <!-- =========================================================================
        MODAL 1: PROXIMITY CHECKOUT & ACID TRANSACTION CONSOLE
