@@ -803,6 +803,212 @@ function showToast(message, type = "info") {
   }, 3500);
 }
 
+let currentUser = null;
+
+function updateHeaderUserBadge() {
+  const avatarEl = document.getElementById("header-user-avatar");
+  const nameEl = document.getElementById("header-user-name");
+  const badgeEl = document.getElementById("header-role-badge");
+
+  if (!currentUser) {
+    if (avatarEl) avatarEl.textContent = "👤";
+    if (nameEl) nameEl.textContent = "Guest";
+    if (badgeEl) badgeEl.textContent = "Unauthenticated";
+    return;
+  }
+
+  if (currentUser.role === "CUSTOMER") {
+    if (avatarEl) avatarEl.textContent = "👤";
+    if (nameEl) nameEl.textContent = currentUser.name || "Customer";
+    if (badgeEl) badgeEl.textContent = "Customer (" + (currentUser.city || "Vellore") + ")";
+  } else if (currentUser.role === "MANAGER") {
+    if (avatarEl) avatarEl.textContent = "🏭";
+    if (nameEl) nameEl.textContent = currentUser.name || "Hub Manager";
+    if (badgeEl) badgeEl.textContent = currentUser.hubName || "Hub Manager";
+  } else if (currentUser.role === "ADMIN") {
+    if (avatarEl) avatarEl.textContent = "🛡️";
+    if (nameEl) nameEl.textContent = "Administrator";
+    if (badgeEl) badgeEl.textContent = "System Admin";
+  }
+}
+
+function initAuthGateway() {
+  const gateway = document.getElementById("auth-gateway-backdrop");
+  if (!gateway) return;
+
+  // Role tab switching in modal
+  const roleTabs = document.querySelectorAll(".auth-role-tab");
+  const formContainers = {
+    CUSTOMER: document.getElementById("form-auth-customer"),
+    MANAGER: document.getElementById("form-auth-manager"),
+    ADMIN: document.getElementById("form-auth-admin")
+  };
+
+  roleTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      roleTabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const role = tab.dataset.role;
+
+      Object.keys(formContainers).forEach(r => {
+        if (formContainers[r]) {
+          formContainers[r].style.display = (r === role) ? "block" : "none";
+        }
+      });
+    });
+  });
+
+  // Customer sub-tab switching (Sign In vs Register)
+  const subSignIn = document.getElementById("customer-sub-signin");
+  const subSignUp = document.getElementById("customer-sub-signup");
+  const formSignIn = document.getElementById("customer-signin-form");
+  const formSignUp = document.getElementById("customer-signup-form");
+
+  if (subSignIn && subSignUp && formSignIn && formSignUp) {
+    subSignIn.addEventListener("click", () => {
+      subSignIn.classList.add("active");
+      subSignUp.classList.remove("active");
+      formSignIn.style.display = "flex";
+      formSignUp.style.display = "none";
+    });
+
+    subSignUp.addEventListener("click", () => {
+      subSignUp.classList.add("active");
+      subSignIn.classList.remove("active");
+      formSignIn.style.display = "none";
+      formSignUp.style.display = "flex";
+    });
+  }
+
+  // Quick-fill buttons for viva presentation
+  document.getElementById("quick-fill-customer")?.addEventListener("click", () => {
+    document.getElementById("tab-auth-customer")?.click();
+    subSignIn?.click();
+    const emailInput = document.getElementById("cust-login-email");
+    const pwInput = document.getElementById("cust-login-password");
+    if (emailInput) emailInput.value = "rohan@gmail.com";
+    if (pwInput) pwInput.value = "customer123";
+    showToast("Filled demo customer credentials (rohan@gmail.com)!", "info");
+  });
+
+  document.getElementById("quick-fill-manager-maa")?.addEventListener("click", () => {
+    document.getElementById("tab-auth-manager")?.click();
+    const fac = document.getElementById("mgr-facility-select");
+    const u = document.getElementById("mgr-login-username");
+    const p = document.getElementById("mgr-login-password");
+    if (fac) fac.value = "1";
+    if (u) u.value = "manager_chennai";
+    if (p) p.value = "chennai123";
+    showToast("Filled Chennai Hub Manager credentials!", "info");
+  });
+
+  document.getElementById("quick-fill-manager-blr")?.addEventListener("click", () => {
+    document.getElementById("tab-auth-manager")?.click();
+    const fac = document.getElementById("mgr-facility-select");
+    const u = document.getElementById("mgr-login-username");
+    const p = document.getElementById("mgr-login-password");
+    if (fac) fac.value = "2";
+    if (u) u.value = "manager_bengaluru";
+    if (p) p.value = "bengaluru123";
+    showToast("Filled Bengaluru Hub Manager credentials!", "info");
+  });
+
+  document.getElementById("quick-fill-admin")?.addEventListener("click", () => {
+    document.getElementById("tab-auth-admin")?.click();
+    const u = document.getElementById("admin-login-username");
+    const p = document.getElementById("admin-login-password");
+    if (u) u.value = "admin";
+    if (p) p.value = "admin123";
+    showToast("Filled System Administrator credentials!", "info");
+  });
+
+  // Customer Sign In submit
+  formSignIn?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("cust-login-email").value.trim();
+    currentUser = {
+      role: "CUSTOMER",
+      name: email.split("@")[0].toUpperCase(),
+      email: email,
+      city: currentCustomerCity || "Vellore"
+    };
+    gateway.classList.remove("open");
+    updateHeaderUserBadge();
+    document.getElementById("nav-btn-customer")?.click();
+    showToast(`Welcome back, ${currentUser.name}! Customer session active.`, "success");
+  });
+
+  // Customer Sign Up submit
+  formSignUp?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("cust-reg-name").value.trim() || "New Customer";
+    const email = document.getElementById("cust-reg-email").value.trim();
+    const city = document.getElementById("cust-reg-city").value;
+    currentUser = {
+      role: "CUSTOMER",
+      name: name,
+      email: email,
+      city: city
+    };
+    currentCustomerCity = city;
+    const citySel = document.getElementById("customer-city-select");
+    if (citySel) citySel.value = city;
+    const cityLabel = document.getElementById("map-customer-city-label");
+    if (cityLabel) cityLabel.innerText = city;
+    renderProximityWidget();
+
+    gateway.classList.remove("open");
+    updateHeaderUserBadge();
+    document.getElementById("nav-btn-customer")?.click();
+    showToast(`Account registered for ${name}! Welcome to Nexus Peripherals.`, "success");
+  });
+
+  // Manager Sign In submit
+  document.getElementById("manager-signin-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const facId = parseInt(document.getElementById("mgr-facility-select").value);
+    const u = document.getElementById("mgr-login-username").value.trim() || "manager";
+    const hubMap = { 1: "Chennai Hub", 2: "Bengaluru Hub", 3: "Mumbai Hub" };
+    currentUser = {
+      role: "MANAGER",
+      name: u,
+      warehouseId: facId,
+      hubName: hubMap[facId] || "Regional Hub"
+    };
+    currentWarehouseId = facId;
+    const hubSelect = document.getElementById("hub-location-select");
+    if (hubSelect) hubSelect.value = facId;
+
+    gateway.classList.remove("open");
+    updateHeaderUserBadge();
+    document.getElementById("nav-btn-manager")?.click();
+    showToast(`Authenticated as Hub Manager (${currentUser.hubName})!`, "success");
+  });
+
+  // Admin Sign In submit
+  document.getElementById("admin-signin-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    currentUser = {
+      role: "ADMIN",
+      name: "Administrator",
+      hubName: "Full Platform"
+    };
+    gateway.classList.remove("open");
+    updateHeaderUserBadge();
+    document.getElementById("nav-btn-admin")?.click();
+    showToast("Welcome, System Administrator! Full platform oversight unlocked.", "success");
+  });
+
+  // Logout button
+  document.getElementById("header-logout-btn")?.addEventListener("click", () => {
+    currentUser = null;
+    updateHeaderUserBadge();
+    gateway.classList.add("open");
+    document.getElementById("nav-btn-customer")?.click();
+    showToast("Session ended. Returned to Authentication Gateway.", "info");
+  });
+}
+
 function initEventHandlers() {
   // Navigation Tabs
   document.querySelectorAll(".nav-tab").forEach(tab => {
@@ -825,19 +1031,6 @@ function initEventHandlers() {
         renderKanban();
       }
     });
-  });
-
-  // Profile Selector
-  document.getElementById("active-profile-select")?.addEventListener("change", e => {
-    const val = e.target.value;
-    if (val === "CUSTOMER") {
-      document.getElementById("nav-btn-customer")?.click();
-    } else if (val.startsWith("MANAGER")) {
-      document.getElementById("nav-btn-manager")?.click();
-    } else if (val === "ADMIN") {
-      document.getElementById("nav-btn-admin")?.click();
-    }
-    showToast(`Swapped session profile to: ${e.target.options[e.target.selectedIndex].text}`, "info");
   });
 
   // Category Filter Pills
@@ -968,4 +1161,6 @@ window.addEventListener("DOMContentLoaded", () => {
   renderHubInventory();
   renderKanban();
   initEventHandlers();
+  initAuthGateway();
+  updateHeaderUserBadge();
 });
