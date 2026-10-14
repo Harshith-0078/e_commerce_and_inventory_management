@@ -922,28 +922,39 @@ function initAuthGateway() {
     showToast("Filled System Administrator credentials!", "info");
   });
 
-  // Customer Sign In submit
-  formSignIn?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const email = document.getElementById("cust-login-email").value.trim();
+  function closeAuthGateway() {
+    if (gateway) {
+      gateway.classList.remove("open");
+      gateway.style.display = "none";
+    }
+  }
+
+  function openAuthGateway() {
+    if (gateway) {
+      gateway.style.display = "flex";
+      gateway.classList.add("open");
+    }
+  }
+
+  function doCustomerSignIn() {
+    const emailInput = document.getElementById("cust-login-email");
+    const email = (emailInput ? emailInput.value.trim() : "") || "rohan@gmail.com";
     currentUser = {
       role: "CUSTOMER",
       name: email.split("@")[0].toUpperCase(),
       email: email,
       city: currentCustomerCity || "Vellore"
     };
-    gateway.classList.remove("open");
+    closeAuthGateway();
     updateHeaderUserBadge();
     document.getElementById("nav-btn-customer")?.click();
     showToast(`Welcome back, ${currentUser.name}! Customer session active.`, "success");
-  });
+  }
 
-  // Customer Sign Up submit
-  formSignUp?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const name = document.getElementById("cust-reg-name").value.trim() || "New Customer";
-    const email = document.getElementById("cust-reg-email").value.trim();
-    const city = document.getElementById("cust-reg-city").value;
+  function doCustomerSignUp() {
+    const name = document.getElementById("cust-reg-name")?.value.trim() || "New Customer";
+    const email = document.getElementById("cust-reg-email")?.value.trim() || "customer@nexus.local";
+    const city = document.getElementById("cust-reg-city")?.value || "Vellore";
     currentUser = {
       role: "CUSTOMER",
       name: name,
@@ -957,17 +968,15 @@ function initAuthGateway() {
     if (cityLabel) cityLabel.innerText = city;
     renderProximityWidget();
 
-    gateway.classList.remove("open");
+    closeAuthGateway();
     updateHeaderUserBadge();
     document.getElementById("nav-btn-customer")?.click();
     showToast(`Account registered for ${name}! Welcome to Nexus Peripherals.`, "success");
-  });
+  }
 
-  // Manager Sign In submit
-  document.getElementById("manager-signin-form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const facId = parseInt(document.getElementById("mgr-facility-select").value);
-    const u = document.getElementById("mgr-login-username").value.trim() || "manager";
+  function doManagerSignIn() {
+    const facId = parseInt(document.getElementById("mgr-facility-select")?.value || "1");
+    const u = document.getElementById("mgr-login-username")?.value.trim() || "manager";
     const hubMap = { 1: "Chennai Hub", 2: "Bengaluru Hub", 3: "Mumbai Hub" };
     currentUser = {
       role: "MANAGER",
@@ -979,31 +988,66 @@ function initAuthGateway() {
     const hubSelect = document.getElementById("hub-location-select");
     if (hubSelect) hubSelect.value = facId;
 
-    gateway.classList.remove("open");
+    closeAuthGateway();
     updateHeaderUserBadge();
     document.getElementById("nav-btn-manager")?.click();
     showToast(`Authenticated as Hub Manager (${currentUser.hubName})!`, "success");
-  });
+  }
 
-  // Admin Sign In submit
-  document.getElementById("admin-signin-form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
+  function doAdminSignIn() {
     currentUser = {
       role: "ADMIN",
       name: "Administrator",
       hubName: "Full Platform"
     };
-    gateway.classList.remove("open");
+    closeAuthGateway();
     updateHeaderUserBadge();
     document.getElementById("nav-btn-admin")?.click();
     showToast("Welcome, System Administrator! Full platform oversight unlocked.", "success");
+  }
+
+  // Bind Form Submits and Direct Button Clicks
+  formSignIn?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    doCustomerSignIn();
+  });
+  document.getElementById("btn-customer-signin")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doCustomerSignIn();
+  });
+
+  formSignUp?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    doCustomerSignUp();
+  });
+  document.getElementById("btn-customer-signup")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doCustomerSignUp();
+  });
+
+  document.getElementById("manager-signin-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    doManagerSignIn();
+  });
+  document.getElementById("btn-manager-signin")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doManagerSignIn();
+  });
+
+  document.getElementById("admin-signin-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    doAdminSignIn();
+  });
+  document.getElementById("btn-admin-signin")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doAdminSignIn();
   });
 
   // Logout button
   document.getElementById("header-logout-btn")?.addEventListener("click", () => {
     currentUser = null;
     updateHeaderUserBadge();
-    gateway.classList.add("open");
+    openAuthGateway();
     document.getElementById("nav-btn-customer")?.click();
     showToast("Session ended. Returned to Authentication Gateway.", "info");
   });

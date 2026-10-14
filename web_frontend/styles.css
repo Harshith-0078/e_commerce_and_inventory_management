@@ -1855,10 +1855,12 @@ body {
 
 /* Auth Gateway Modal Backdrop */
 .auth-gateway-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
   z-index: 2000 !important;
   background: rgba(8, 6, 16, 0.88) !important;
   backdrop-filter: blur(28px) !important;
-  display: flex !important;
+  display: none !important;
   align-items: center;
   justify-content: center;
   opacity: 0;
@@ -1867,6 +1869,7 @@ body {
 }
 
 .auth-gateway-backdrop.open {
+  display: flex !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
