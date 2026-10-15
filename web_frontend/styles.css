@@ -1800,15 +1800,13 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 24px 32px 28px;
-  background: radial-gradient(circle at 50% 30%, rgba(55, 28, 70, 0.95), rgba(16, 11, 24, 0.98) 75%),
+  background: radial-gradient(circle at 50% 30%, rgba(46, 22, 58, 0.96), rgba(14, 9, 20, 0.99) 75%),
               url('images/fuji_sakura_bg.jpg') center/cover no-repeat fixed;
-  backdrop-filter: blur(24px) saturate(170%);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
   overflow-x: hidden;
   overflow-y: auto;
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              visibility 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .assembly-splash.dismissed {
@@ -1833,12 +1831,13 @@ body {
   border-radius: 14px 2px 14px 2px;
   filter: drop-shadow(0 2px 6px rgba(255, 105, 180, 0.45));
   pointer-events: none;
+  will-change: transform;
   animation: petalFall linear infinite;
 }
 
 @keyframes petalFall {
   0% {
-    transform: translateY(-40px) translateX(0) rotateZ(0deg) rotateY(0deg);
+    transform: translate3d(0, -40px, 0) rotateZ(0deg) rotateY(0deg);
     opacity: 0;
   }
   15% {
@@ -1848,7 +1847,7 @@ body {
     opacity: 0.8;
   }
   100% {
-    transform: translateY(105vh) translateX(120px) rotateZ(380deg) rotateY(240deg);
+    transform: translate3d(120px, 105vh, 0) rotateZ(380deg) rotateY(240deg);
     opacity: 0;
   }
 }
@@ -1873,7 +1872,6 @@ body {
   border: 1px solid rgba(255, 183, 197, 0.35);
   padding: 8px 20px;
   border-radius: var(--radius-full);
-  backdrop-filter: blur(14px);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
@@ -1930,7 +1928,6 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
 }
 
 .assembly-action-chip:hover {
@@ -1970,7 +1967,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  perspective: 1250px;
+  perspective: 1200px;
   perspective-origin: 50% 42%;
   margin: 16px 0;
   padding: 10px 0;
@@ -1983,12 +1980,17 @@ body {
   width: 860px;
   max-width: 95vw;
   transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
-  animation: chassisFloat 6s ease-in-out infinite alternate;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.keyboard-chassis-3d.assembled {
+  animation: chassisFloat 7s ease-in-out infinite alternate;
 }
 
 @keyframes chassisFloat {
-  0% { transform: rotateX(23deg) rotateZ(-3deg) rotateY(1deg) translateY(0); }
-  100% { transform: rotateX(21deg) rotateZ(-2.5deg) rotateY(1.5deg) translateY(-8px); }
+  0% { transform: rotateX(23deg) rotateZ(-3deg) rotateY(1deg) translate3d(0, 0, 0); }
+  100% { transform: rotateX(21.5deg) rotateZ(-2.5deg) rotateY(1.5deg) translate3d(0, -7px, 0); }
 }
 
 /* Neon Underglow */
@@ -2135,7 +2137,7 @@ body {
   bottom: 4px;
 }
 
-/* Floating Keycap Component */
+/* Floating Keycap Component - Hardware Accelerated */
 .kb-keycap {
   position: absolute;
   inset: 0;
@@ -2148,74 +2150,77 @@ body {
   padding: 4px 6px;
   font-family: var(--font-sans);
   font-weight: 700;
-  will-change: transform, opacity, filter;
-  transition: transform 0.08s ease, filter 0.08s ease;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform, opacity;
+  transition: transform 0.08s ease;
   
-  /* Initial floating state (elevated in 3D air before snap) */
-  transform: translateY(-85px) translateZ(95px) rotateX(-26deg);
+  /* Initial floating state (elevated smoothly in 3D air) */
+  transform: translate3d(0, -65px, 75px) rotateX(-18deg);
   opacity: 0;
 }
 
-/* Attaching Keyframe Animation */
+/* Attaching Keyframe Animation - 60/120fps Pure GPU Transform */
 .kb-keycap.anim-attaching {
-  animation: keySnapAttach 0.52s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+  animation: keySnapAttach 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   animation-delay: var(--delay, 0s);
 }
 
 .kb-keycap.attached {
-  transform: translateY(0) translateZ(0) rotateX(0);
+  transform: translate3d(0, 0, 0) rotateX(0deg);
   opacity: 1;
 }
 
 @keyframes keySnapAttach {
   0% {
-    transform: translateY(-90px) translateZ(105px) rotateX(-30deg) scale(1.15);
+    transform: translate3d(0, -65px, 75px) rotateX(-18deg);
     opacity: 0;
-    filter: drop-shadow(0 20px 25px rgba(255, 183, 197, 0.5));
   }
   20% {
     opacity: 1;
   }
-  75% {
-    /* Switch bottom-out compression */
-    transform: translateY(3px) translateZ(-5px) rotateX(2deg) scale(0.98);
-  }
-  90% {
-    /* Spring rebound */
-    transform: translateY(-1px) translateZ(1px) rotateX(-0.5deg);
+  80% {
+    /* Subtle mechanical switch stem cushion */
+    transform: translate3d(0, 1.2px, -2px) rotateX(0.8deg);
   }
   100% {
-    transform: translateY(0) translateZ(0) rotateX(0deg) scale(1);
+    transform: translate3d(0, 0, 0) rotateX(0deg);
     opacity: 1;
-    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
   }
 }
 
 /* Pressed State for Interactive Typing */
 .kb-keycap.pressed {
-  transform: translateY(3.5px) translateZ(-6px) !important;
-  filter: brightness(1.22) drop-shadow(0 0 10px rgba(255, 183, 197, 0.85)) !important;
+  transform: translate3d(0, 3px, -5px) !important;
+  filter: brightness(1.18);
 }
 
-/* Shockwave Ring at Point of Attachment / Keypress */
-.key-shockwave {
+/* Shockwave / Glow Pulse via pure CSS Pseudo-element (0 JS DOM overhead) */
+.kb-keycap::after {
+  content: "";
   position: absolute;
-  inset: -8px;
-  border-radius: 12px;
-  border: 2px solid #FF85A2;
+  inset: -4px;
+  border-radius: 10px;
+  border: 1.5px solid #FF85A2;
+  box-shadow: 0 0 10px rgba(255, 133, 162, 0.5);
   pointer-events: none;
-  z-index: 5;
   opacity: 0;
-  animation: shockwavePulse 0.45s ease-out forwards;
+  transform: scale(0.7);
+  backface-visibility: hidden;
+}
+
+.kb-keycap.anim-attaching::after {
+  animation: shockwavePulse 0.5s ease-out forwards;
+  animation-delay: calc(var(--delay, 0s) + 0.48s);
 }
 
 @keyframes shockwavePulse {
   0% {
-    transform: scale(0.5);
-    opacity: 1;
+    transform: scale(0.7);
+    opacity: 0.85;
   }
   100% {
-    transform: scale(1.9);
+    transform: scale(1.55);
     opacity: 0;
   }
 }

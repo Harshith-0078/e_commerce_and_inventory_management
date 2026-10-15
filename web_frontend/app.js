@@ -1048,6 +1048,7 @@ const KEYBOARD_LAYOUT_65 = [
 
 let assemblyAudioEnabled = true;
 let assemblyAudioContext = null;
+let precomputedClickBuffer = null;
 let assemblyTimeouts = [];
 let assemblyAutoDismissTimer = null;
 
@@ -1063,6 +1064,18 @@ function getAssemblyAudioCtx() {
     assemblyAudioContext.resume();
   }
   return assemblyAudioContext;
+}
+
+function getClickBuffer(ctx) {
+  if (!precomputedClickBuffer && ctx) {
+    const len = Math.floor(ctx.sampleRate * 0.005);
+    precomputedClickBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = precomputedClickBuffer.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.25));
+    }
+  }
+  return precomputedClickBuffer;
 }
 
 // Synthesize authentic mechanical switch sound ("thock" on snap & keypress)
@@ -1098,21 +1111,19 @@ function playMechanicalThock(isSpace = false) {
     osc.start(now);
     osc.stop(now + (isSpace ? 0.11 : 0.06));
 
-    // Subtle click transient (stem bottoming into brass housing)
-    const clickBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.005), ctx.sampleRate);
-    const data = clickBuffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.25));
-    }
-    const noiseNode = ctx.createBufferSource();
-    noiseNode.buffer = clickBuffer;
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(isSpace ? 0.08 : 0.05, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.006);
+    // Fast cached click transient (stem bottoming into brass housing)
+    const clickBuf = getClickBuffer(ctx);
+    if (clickBuf) {
+      const noiseNode = ctx.createBufferSource();
+      noiseNode.buffer = clickBuf;
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(isSpace ? 0.08 : 0.05, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.006);
 
-    noiseNode.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
-    noiseNode.start(now);
+      noiseNode.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noiseNode.start(now);
+    }
   } catch (err) {
     // Ignore audio autoplay restrictions gracefully
   }
@@ -1285,7 +1296,10 @@ function startAssemblyAnimation() {
     cap.classList.remove("anim-attaching", "attached", "pressed");
   });
 
-  // Calculate organic staggered cascade delays
+  const chassis = document.getElementById("keyboard-chassis");
+  if (chassis) chassis.classList.remove("assembled");
+
+  // Calculate organic fluid cascading wave delays
   let maxDelay = 0;
   KEYBOARD_LAYOUT_65.forEach((rowKeys, rIdx) => {
     rowKeys.forEach((key, cIdx) => {
@@ -1294,30 +1308,37 @@ function startAssemblyAnimation() {
       const cap = keyEl.querySelector(".kb-keycap");
       if (!cap) return;
 
-      // Base delay: cascading wave from top-left, with Spacebar climax
-      let delay = (rIdx * 0.22) + (cIdx * 0.038) + 0.15;
+      // Silky smooth diagonal cascading wave
+      let delay = 0.10 + (rIdx * 0.08) + (cIdx * 0.024);
       if (key.code === "Space") {
-        delay = (rIdx * 0.22) + 0.85; // Majestic climax landing
+        delay = 0.10 + (4 * 0.08) + (10 * 0.024) + 0.22;
       }
       if (delay > maxDelay) maxDelay = delay;
 
       cap.style.setProperty("--delay", `${delay.toFixed(3)}s`);
-
-      // Timer to snap in and trigger sound + shockwave
-      const snapTimer = setTimeout(() => {
-        cap.classList.add("attached");
-        playMechanicalThock(key.code === "Space");
-        spawnKeyShockwave(keyEl);
-      }, (delay + 0.38) * 1000);
-      assemblyTimeouts.push(snapTimer);
-
-      // Trigger CSS animation class
       cap.classList.add("anim-attaching");
     });
   });
 
+  // Scheduled rhythmic mechanical audio clicks during wave flight
+  if (assemblyAudioEnabled) {
+    const waveTickDelays = [0.18, 0.32, 0.46, 0.60, 0.74, 0.88, 1.02];
+    waveTickDelays.forEach(sec => {
+      const t = setTimeout(() => {
+        playMechanicalThock(false);
+      }, sec * 1000);
+      assemblyTimeouts.push(t);
+    });
+    // Final spacebar thock
+    const spaceThock = setTimeout(() => {
+      playMechanicalThock(true);
+    }, (maxDelay + 0.45) * 1000);
+    assemblyTimeouts.push(spaceThock);
+  }
+
   // Completion sequence when all keys have attached
   const completionTimer = setTimeout(() => {
+    if (chassis) chassis.classList.add("assembled");
     if (underglow) underglow.classList.add("active");
     if (stagePill) stagePill.textContent = "🌸 ALL 68 KEYCAPS ASSEMBLED — SYSTEM READY";
     if (statusText) {
@@ -1328,8 +1349,8 @@ function startAssemblyAnimation() {
     // Auto dismiss after 5 seconds if left idle
     assemblyAutoDismissTimer = setTimeout(() => {
       dismissAssemblySplash();
-    }, 5500);
-  }, (maxDelay + 0.6) * 1000);
+    }, 5000);
+  }, (maxDelay + 0.72) * 1000);
 
   assemblyTimeouts.push(completionTimer);
 }
