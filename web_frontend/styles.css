@@ -1462,242 +1462,649 @@ body {
 .restock-modal-card { max-width: 520px; }
 .outbox-modal-card { max-width: 820px; }
 
-.modal-header {
+/* ==========================================================================
+   NEAREST-WAREHOUSE GEODESIC PROXIMITY CHECKOUT & MAP ANALYTICS MODAL
+   ========================================================================== */
+.proximity-checkout-modal-card {
+  max-width: 1240px;
+  width: 96vw;
+  height: 90vh;
+  max-height: 840px;
+  background: #091124;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 45px rgba(56, 189, 248, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+.proximity-checkout-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.9);
+  padding: 14px 22px;
+  background: #0E172C;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.modal-title {
+.modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-prefix {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.8px;
+}
+
+.header-divider {
+  color: #475569;
+  font-weight: 300;
+  font-size: 14px;
+}
+
+.header-section-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-right: 6px;
+}
+
+.header-status-pills {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.header-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 6px;
+  font-size: 11.5px;
+}
+
+.badge-transact {
+  background: rgba(239, 68, 68, 0.18);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.badge-acid {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.badge-db {
+  background: rgba(148, 163, 184, 0.12);
+  color: #CBD5E1;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.proximity-modal-body {
+  display: grid;
+  grid-template-columns: 1.22fr 1fr;
+  flex: 1;
+  overflow: hidden;
+  background: #080D1A;
+}
+
+/* Left Map Pane */
+.proximity-map-pane {
+  padding: 16px 20px 18px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  background: #0A1224;
+}
+
+.map-pane-header {
+  margin-bottom: 10px;
+}
+
+.map-pane-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.3px;
+}
+
+.map-viewport-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 440px;
+  background: #070D1B;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-zoom-controls {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.map-zoom-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.map-zoom-btn:hover {
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.map-zoom-btn:first-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.india-map-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 520px;
+  transition: transform 0.25s ease;
+}
+
+.map-state-label {
+  font-size: 8px;
+  fill: #64748B;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.map-state-label-mini {
+  font-size: 7px;
+  fill: #475569;
+  font-family: var(--font-sans);
+  pointer-events: none;
+}
+
+.hub-pin-tag {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 10px;
+  fill: #FFFFFF;
+}
+
+.hub-ring-pulse {
+  animation: hubRingPulse 2s infinite ease-out;
+  transform-origin: center;
+}
+
+@keyframes hubRingPulse {
+  0% { r: 5; opacity: 1; }
+  100% { r: 16; opacity: 0; }
+}
+
+.flight-arc {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.flight-arc.optimal-arc {
+  stroke: #38BDF8;
+  stroke-width: 2.5;
+  stroke-dasharray: 6 3;
+  animation: flowArc 1.5s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+}
+
+.flight-arc.candidate-arc {
+  stroke: #0284C7;
+  stroke-width: 1.8;
+  opacity: 0.65;
+}
+
+@keyframes flowArc {
+  from { stroke-dashoffset: 18; }
+  to { stroke-dashoffset: 0; }
+}
+
+.cust-pin-halo {
+  animation: custPulse 1.8s infinite ease-out;
+}
+
+@keyframes custPulse {
+  0% { r: 6; opacity: 0.9; }
+  100% { r: 20; opacity: 0; }
+}
+
+/* Floating Callout Badges on the map */
+.map-floating-callouts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.map-callout-card {
+  position: absolute;
+  pointer-events: auto;
+  background: rgba(9, 18, 34, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  transition: all 0.25s ease;
+}
+
+.map-callout-card.optimal-choice {
+  border: 1px solid #38BDF8;
+  background: rgba(10, 24, 46, 0.95);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+}
+
+.callout-dist {
+  font-weight: 700;
+  color: #FFFFFF;
+  font-size: 11px;
+}
+
+.callout-status {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.status-optimal {
+  color: #34D399;
+  font-weight: 700;
+}
+
+.status-ok {
+  color: #38BDF8;
+}
+
+.status-warn {
+  color: #FBBF24;
+}
+
+/* Right Sidebar Pane */
+.proximity-sidebar-pane {
+  padding: 16px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  background: #0A1224;
+}
+
+/* Cart Review Invoice Card */
+.cart-review-invoice-card {
+  background: rgba(13, 22, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.invoice-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.invoice-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.invoice-header-labels {
+  display: flex;
+  gap: 32px;
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.invoice-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.invoice-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.invoice-item-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #0F172A;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.invoice-item-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #F1F5F9;
+  line-height: 1.3;
+}
+
+.invoice-item-qty-select {
+  background: #0F172A;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #F1F5F9;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.invoice-item-price {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  min-width: 75px;
+  text-align: right;
+}
+
+.invoice-total-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.total-caption {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.total-price-value {
   font-size: 16px;
   font-weight: 800;
   color: #FFFFFF;
 }
 
-.modal-subtitle {
-  font-size: 11.5px;
-  color: var(--text-dim);
-}
-
-.modal-close-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  font-size: 24px;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.modal-close-btn:hover {
-  color: #FFFFFF;
-}
-
-.modal-body-split {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  flex: 1;
-  overflow: hidden;
-}
-
-.modal-col {
-  padding: 22px;
-  overflow-y: auto;
-}
-
-.modal-col-routing {
-  border-right: 1px solid var(--border-subtle);
-}
-
-.route-summary-box {
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  margin-bottom: 16px;
-}
-
-.route-hub-badge {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #34D399;
-  letter-spacing: 0.5px;
-}
-
-.route-hub-name {
-  font-size: 15px;
-  font-weight: 800;
-  color: #FFFFFF;
-  margin: 3px 0;
-}
-
-.route-hub-stats {
-  font-size: 11.5px;
-  color: var(--text-muted);
-}
-
-.section-title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-bottom: 8px;
-}
-
-.modal-cart-items-scroll {
-  max-height: 160px;
-  overflow-y: auto;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 8px 12px;
-  margin-bottom: 16px;
-  background: rgba(8, 12, 20, 0.6);
-}
-
-.modal-checkout-item-row {
+.invoice-payment-tabs {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.modal-checkout-item-row:last-child {
-  border-bottom: none;
-}
-
-.modal-item-thumb {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
-}
-
-.modal-item-thumb[src$=".svg"] {
-  object-fit: contain;
-  padding: 4px;
-}
-
-.modal-item-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.modal-item-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #FFFFFF;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.modal-item-sub {
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.modal-item-price {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--accent-cyan);
-}
-
-.payment-options-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.pay-option {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  font-size: 12px;
+  margin-top: 4px;
+}
+
+.pay-selector-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #94A3B8;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.pay-option input { margin-right: 4px; }
-.pay-option.active {
-  border-color: var(--accent-cyan);
-  background: rgba(6, 182, 212, 0.1);
+.pay-selector-tab.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38BDF8;
+  color: #38BDF8;
 }
 
-.modal-total-banner {
+.tab-radio-dot {
+  font-size: 10px;
+}
+
+.payment-details-wrapper {
+  margin: 6px 0;
+}
+
+.payment-method-panel {
+  display: none;
+}
+
+.payment-method-panel.active {
+  display: block;
+}
+
+.upi-qr-display-box {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  background: rgba(15, 23, 42, 0.8);
-  border-radius: var(--radius-md);
-  margin-bottom: 14px;
-  font-size: 13px;
+  gap: 14px;
+  background: #0A1224;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.upi-qr-svg {
+  border-radius: 6px;
+  background: #FFFFFF;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.upi-scan-title {
+  font-size: 11px;
   font-weight: 700;
+  color: #FFFFFF;
+  display: block;
 }
 
-.modal-total-val {
-  font-size: 18px;
-  color: var(--accent-cyan);
+.upi-apps-row {
+  font-size: 10px;
+  color: #94A3B8;
+  display: block;
+  margin: 2px 0 6px;
 }
 
-/* ACID Live Terminal */
-.modal-col-terminal {
-  background: #06090F;
+.upi-vpa-pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.card-entry-fields {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  background: #0A1224;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.terminal-header {
+.card-num-input, .card-sub-input {
+  background: #0F172A;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  outline: none;
+}
+
+.card-dual-inputs {
+  display: flex;
+  gap: 8px;
+}
+
+.card-sub-input { flex: 1; }
+
+.netbanking-selector-box {
+  background: #0A1224;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 10px;
+  gap: 10px;
 }
 
-.terminal-dots {
+.netbanking-label { font-size: 11px; color: #94A3B8; }
+.netbanking-select-dropdown {
+  flex: 1;
+  background: #0F172A;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #FFFFFF;
+  font-size: 11.5px;
+  outline: none;
+}
+
+.confirm-atomic-order-btn {
+  width: 100%;
+  padding: 12px;
+  background: #00E676;
+  border: none;
+  border-radius: 10px;
+  color: #032512;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 230, 118, 0.3);
+  margin-top: 4px;
+}
+
+.confirm-atomic-order-btn:hover {
+  background: #00FF85;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(0, 230, 118, 0.5);
+}
+
+/* Live Telemetry Terminal Card */
+.live-telemetry-terminal-card {
+  background: #080D1A;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 10px;
+  padding: 12px 14px;
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  flex: 1;
+  min-height: 185px;
 }
 
-.t-dot { width: 9px; height: 9px; border-radius: 50%; }
-.t-red { background: #EF4444; }
-.t-yellow { background: #F59E0B; }
-.t-green { background: #10B981; }
+.telemetry-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
 
-.terminal-title {
+.telemetry-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
   font-family: var(--font-mono);
-  font-size: 10.5px;
-  color: var(--text-dim);
 }
 
-.terminal-screen {
+.telemetry-window-controls {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #64748B;
+  cursor: pointer;
+}
+
+.telemetry-window-controls span:hover {
+  color: #FFFFFF;
+}
+
+.telemetry-terminal-body {
   flex: 1;
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.6;
-  color: #34D399;
+  color: #94A3B8;
   overflow-y: auto;
-  padding-right: 4px;
 }
 
-.t-line { margin-bottom: 4px; }
-.t-dim { color: var(--text-dim); }
-.t-warn { color: var(--status-amber); }
-.t-err { color: var(--status-crimson); }
-.t-cyan { color: var(--accent-cyan); }
+.log-line { margin-bottom: 2px; }
+.log-dim { color: #64748B; }
+.log-lock { color: #38BDF8; font-weight: 600; }
+.log-tracking { color: #F59E0B; font-weight: 600; }
+.log-commit { color: #10B981; font-weight: 700; }
+.log-complete { color: #34D399; font-weight: 700; }
+
+/* Location strip trigger button */
+.proximity-analytics-trigger-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: var(--radius-full);
+  color: #38BDF8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.proximity-analytics-trigger-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38BDF8;
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+}
 
 /* Form Elements */
 .modal-body-form {

@@ -391,125 +391,225 @@ window.updateCartQty = function(productId, delta) {
 };
 
 // ============================================================================
-// MODAL & ACID CHECKOUT TRANSACTION SIMULATION
+// NEAREST-WAREHOUSE GEODESIC PROXIMITY CHECKOUT & MAP ANALYTICS
 // ============================================================================
 
-function openCheckoutModal() {
-  if (shoppingCart.length === 0) {
-    showToast("Your cart is empty! Please add components first.", "warning");
-    return;
+const HUB_MAP_COORDS = {
+  1: { id: 1, code: "MAA", name: "Chennai", x: 290, y: 470, stockPct: 60 },
+  2: { id: 2, code: "BLR", name: "Bengaluru", x: 235, y: 475, stockPct: 100 },
+  3: { id: 3, code: "MUM", name: "Mumbai", x: 165, y: 345, stockPct: 85 }
+};
+
+const CITY_MAP_COORDS = {
+  "Vellore": { x: 185, y: 415, lat: 15.3173, lon: 75.7139, displayDistances: { 2: "312.4", 3: "518.2", 1: "1045.1" } },
+  "Bengaluru": { x: 235, y: 475, lat: 12.9716, lon: 77.5946 },
+  "Chennai": { x: 290, y: 470, lat: 13.0827, lon: 80.2707 },
+  "Mumbai": { x: 165, y: 345, lat: 19.0760, lon: 72.8777 },
+  "Hyderabad": { x: 250, y: 380, lat: 17.3850, lon: 78.4867 },
+  "Delhi": { x: 220, y: 155, lat: 28.7041, lon: 77.1025 },
+  "Coimbatore": { x: 225, y: 510, lat: 11.0168, lon: 76.9558 }
+};
+
+let SHOWCASE_INVOICE_ITEMS = [
+  { id: 'sc-1', name: "Nexus mechanical keyboard - Cherry MX Brown", price: 7499.00, quantity: 1, image: "images/keychron_q1.jpg" },
+  { id: 'sc-2', name: "Keycap Set - Aura RGB", price: 1500.00, quantity: 1, image: "images/aura_keycaps.svg" },
+  { id: 'sc-3', name: "Nexus Gaming Mouse - Pulse", price: 3299.00, quantity: 1, image: "images/nexus_mouse.svg" }
+];
+
+function renderGeodesicMap() {
+  const custPos = CITY_MAP_COORDS[currentCustomerCity] || CITY_MAP_COORDS["Vellore"];
+  const pinEl = document.getElementById("svg-cust-pin");
+  if (pinEl) {
+    pinEl.setAttribute("transform", `translate(${custPos.x}, ${custPos.y})`);
   }
 
-  const backdrop = document.getElementById("checkout-modal-backdrop");
-  if (!backdrop) return;
+  // Draw 3 Curved Arcs
+  const arcsGroup = document.getElementById("svg-flight-arcs");
+  const calloutsContainer = document.getElementById("map-floating-callouts");
 
-  const { optimalHub } = evaluateCandidateHubs();
-  
-  document.getElementById("modal-chosen-hub-name").innerText = `${optimalHub.name} — ${optimalHub.city}`;
-  document.getElementById("modal-chosen-hub-stats").innerHTML = `
-    Geodesic Distance: <strong>${optimalHub.distanceKm.toFixed(1)} km</strong> from ${currentCustomerCity}<br>
-    Stock Status: <strong class="text-emerald">100% In Stock</strong> for all cart items!
-  `;
+  let hubs = [
+    { id: 2, code: "BLR", name: "Bengaluru", x: 235, y: 475, stockPct: 100, isOptimal: true },
+    { id: 3, code: "MUM", name: "Mumbai", x: 165, y: 345, stockPct: 85, isOptimal: false },
+    { id: 1, code: "MAA", name: "Chennai", x: 290, y: 470, stockPct: 60, isOptimal: false }
+  ];
 
-  // Render modal item list with product thumbnails
-  const listEl = document.getElementById("modal-checkout-items-list");
+  // Calculate / assign distances
+  hubs.forEach(h => {
+    if (custPos.displayDistances && custPos.displayDistances[h.id]) {
+      h.distanceKm = custPos.displayDistances[h.id];
+    } else {
+      const wh = WAREHOUSES.find(w => w.id === h.id);
+      const d = calculateHaversineDistance(custPos.lat, custPos.lon, wh.lat, wh.lon);
+      h.distanceKm = d.toFixed(1);
+    }
+  });
+
+  if (arcsGroup) {
+    arcsGroup.innerHTML = hubs.map(h => {
+      const x1 = custPos.x;
+      const y1 = custPos.y;
+      const x2 = h.x;
+      const y2 = h.y;
+      
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      // Perpendicular curvature offset
+      const cx = (x1 + x2) / 2 - dy * 0.22;
+      const cy = (y1 + y2) / 2 + dx * 0.22;
+
+      const arcClass = h.isOptimal ? "flight-arc optimal-arc" : "flight-arc candidate-arc";
+      return `<path d="M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}" class="${arcClass}" />`;
+    }).join("");
+  }
+
+  // Render 3 floating callouts matching screenshot
+  if (calloutsContainer) {
+    const blrHub = hubs.find(h => h.id === 2);
+    const mumHub = hubs.find(h => h.id === 3);
+    const maaHub = hubs.find(h => h.id === 1);
+
+    calloutsContainer.innerHTML = `
+      <!-- Optimal Hub Callout (Bengaluru) -->
+      <div class="map-callout-card optimal-choice" style="left: 34%; top: 46%;">
+        <span class="callout-dist">${blrHub.distanceKm} km to Bengaluru Hub</span>
+        <span class="callout-status status-optimal">100% Stock Available - Optimal Choice</span>
+      </div>
+
+      <!-- Mumbai Hub Callout -->
+      <div class="map-callout-card" style="left: 8%; top: 62%;">
+        <span class="callout-dist">${mumHub.distanceKm} km to Mumbai Hub</span>
+        <span class="callout-status status-ok">85% Stock Available</span>
+      </div>
+
+      <!-- Chennai Hub Callout -->
+      <div class="map-callout-card" style="left: 55%; top: 64%;">
+        <span class="callout-dist">${maaHub.distanceKm} km to Chennai Hub</span>
+        <span class="callout-status status-warn">60% Stock Available</span>
+      </div>
+    `;
+  }
+}
+
+function renderCheckoutInvoice() {
+  const container = document.getElementById("invoice-items-container");
+  const grandTotalEl = document.getElementById("invoice-grand-total");
+  if (!container || !grandTotalEl) return;
+
+  let itemsToRender = [];
+  if (shoppingCart.length > 0) {
+    itemsToRender = shoppingCart.map(ci => {
+      const p = PRODUCTS.find(prod => prod.id === ci.product_id);
+      return {
+        id: ci.product_id,
+        name: p ? p.name : "Custom Component",
+        price: p ? p.price : 2999.00,
+        quantity: ci.quantity,
+        image: p ? p.image : "images/keychron_q1.jpg",
+        isCartItem: true
+      };
+    });
+  } else {
+    itemsToRender = SHOWCASE_INVOICE_ITEMS;
+  }
+
   let total = 0;
-  listEl.innerHTML = shoppingCart.map(item => {
-    const p = PRODUCTS.find(prod => prod.id === item.product_id);
-    if (!p) return "";
-    const sub = p.price * item.quantity;
-    total += sub;
+  container.innerHTML = itemsToRender.map((item, idx) => {
+    const itemSub = item.price * item.quantity;
+    total += itemSub;
     return `
-      <div class="modal-checkout-item-row">
-        <img class="modal-item-thumb" src="${p.image}" alt="${p.name}" />
-        <div class="modal-item-info">
-          <div class="modal-item-title">${p.name}</div>
-          <div class="modal-item-sub">${p.sku} · Qty: <strong>${item.quantity}</strong></div>
-        </div>
-        <div class="modal-item-price">₹${sub.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+      <div class="invoice-item-row" data-id="${item.id}">
+        <img class="invoice-item-thumb" src="${item.image}" alt="${item.name}" />
+        <span class="invoice-item-name">${item.name}</span>
+        <select class="invoice-item-qty-select" onchange="changeInvoiceQty(${idx}, this.value, ${!!item.isCartItem})">
+          <option value="1" ${item.quantity === 1 ? 'selected' : ''}>1</option>
+          <option value="2" ${item.quantity === 2 ? 'selected' : ''}>2</option>
+          <option value="3" ${item.quantity === 3 ? 'selected' : ''}>3</option>
+          <option value="4" ${item.quantity === 4 ? 'selected' : ''}>4</option>
+          <option value="5" ${item.quantity === 5 ? 'selected' : ''}>5</option>
+        </select>
+        <span class="invoice-item-price">₹${itemSub.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
       </div>
     `;
   }).join("");
 
-  document.getElementById("modal-checkout-grand-total").innerText = `₹${total.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+  grandTotalEl.innerText = `₹${total.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+}
 
-  // Reset terminal
+window.changeInvoiceQty = function(index, newQtyStr, isCartItem) {
+  const newQty = parseInt(newQtyStr, 10);
+  if (isCartItem && shoppingCart[index]) {
+    shoppingCart[index].quantity = newQty;
+    renderMiniCart();
+    renderProximityWidget();
+  } else if (SHOWCASE_INVOICE_ITEMS[index]) {
+    SHOWCASE_INVOICE_ITEMS[index].quantity = newQty;
+  }
+  renderCheckoutInvoice();
+};
+
+function openCheckoutModal() {
+  const backdrop = document.getElementById("checkout-modal-backdrop");
+  if (!backdrop) return;
+
+  renderGeodesicMap();
+  renderCheckoutInvoice();
+
   const term = document.getElementById("acid-terminal-screen");
-  term.innerHTML = `
-    <div class="t-line t-dim">-- Nexus Peripherals ACID Transaction Console Ready --</div>
-    <div class="t-line t-dim">-- Click 'Confirm Atomic Order' to start sequence --</div>
-  `;
+  if (term) {
+    term.innerHTML = `
+      <div class="log-line log-dim">MySQL 8.0 transaction logs...</div>
+      <div class="log-line log-lock">MySQL 8.1: Acquired Lock on Order_Items table...</div>
+      <div class="log-line log-tracking">MySQL 8.0: Generating Tracking Number: NX1082345...</div>
+      <div class="log-line log-commit">MySQL 8.0: Commit successful.</div>
+      <div class="log-line log-complete">MySQL 8.0: Transaction complete.</div>
+    `;
+  }
 
   backdrop.classList.add("open");
 }
 
 function executeAcidCommit() {
   const term = document.getElementById("acid-terminal-screen");
-  const { optimalHub } = evaluateCandidateHubs();
-  const orderId = Math.floor(8404 + Math.random() * 500);
-  const trackingNumber = `TRK-NX-${Math.random().toString(16).substring(2, 10).toUpperCase()}`;
-  const totalAmount = shoppingCart.reduce((sum, item) => {
-    const p = PRODUCTS.find(prod => prod.id === item.product_id);
-    return sum + (p ? p.price * item.quantity : 0);
-  }, 0);
+  const btn = document.getElementById("confirm-acid-order-btn");
+  if (!term) return;
 
-  const steps = [
-    { text: `[BEGIN TRANSACTION] Starting atomic multi-item order fulfillment sequence...`, class: "t-dim", delay: 100 },
-    { text: `[PROXIMITY] Customer Location: ${currentCustomerCity}. Nearest Hub: ${optimalHub.name} (${optimalHub.distanceKm.toFixed(1)} km)`, class: "t-cyan", delay: 350 },
-    { text: `[LOCK] Acquiring FOR UPDATE row locks on PRODUCT_INVENTORY for ${shoppingCart.length} line items...`, class: "t-dim", delay: 700 },
-    { text: `[INVENTORY] Verified 100% stock in Hub #${optimalHub.id}. Decrementing bin counts atomically...`, class: "t-cyan", delay: 1050 },
-    { text: `[ORDERS] Inserting Master Record: OrderID #${orderId}, Total: ₹${totalAmount.toLocaleString('en-IN')}`, class: "t-dim", delay: 1400 },
-    { text: `[ORDER_ITEM] Writing ${shoppingCart.length} itemized child rows into database...`, class: "t-dim", delay: 1750 },
-    { text: `[PAYMENT] Recording transaction status: COMPLETED via UPI Gateway`, class: "t-dim", delay: 2100 },
-    { text: `[SHIPMENT] Generating courier dispatch manifest with Tracking ID: ${trackingNumber}`, class: "t-warn", delay: 2450 },
-    { text: `[COMMIT] Transaction committed successfully to MySQL 8.0! (Isolation Level: REPEATABLE-READ)`, class: "text-emerald font-bold", delay: 2800 },
-    { text: `[SMTP] Asynchronous confirmation invoice dispatched to customer email address.`, class: "t-cyan", delay: 3150 },
-    { text: `[SUCCESS] Order #${orderId} active. Hub manager notified for dispatch!`, class: "text-emerald font-bold", delay: 3400 }
-  ];
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = "0.75";
+    btn.innerText = "Committing Atomic Order (ACID)...";
+  }
 
   term.innerHTML = "";
-  steps.forEach(step => {
+  const randomTracking = `NX${Math.floor(1000000 + Math.random() * 9000000)}`;
+
+  const logs = [
+    { text: "MySQL 8.0 transaction logs...", class: "log-dim", delay: 250 },
+    { text: "MySQL 8.1: Acquired Lock on Order_Items table...", class: "log-lock", delay: 650 },
+    { text: `MySQL 8.0: Generating Tracking Number: ${randomTracking}...`, class: "log-tracking", delay: 1150 },
+    { text: "MySQL 8.0: Commit successful.", class: "log-commit", delay: 1650 },
+    { text: "MySQL 8.0: Transaction complete.", class: "log-complete", delay: 2050 }
+  ];
+
+  logs.forEach(step => {
     setTimeout(() => {
       const line = document.createElement("div");
-      line.className = `t-line ${step.class || ''}`;
+      line.className = `log-line ${step.class}`;
       line.innerText = step.text;
       term.appendChild(line);
       term.scrollTop = term.scrollHeight;
 
-      if (step.text.includes("[SUCCESS]")) {
-        // Deduct inventory locally
-        shoppingCart.forEach(item => {
-          const prod = PRODUCTS.find(p => p.id === item.product_id);
-          if (prod && prod.inventory[optimalHub.id]) {
-            prod.inventory[optimalHub.id] -= item.quantity;
-          }
-        });
-
-        // Add to shipments list
-        SHIPMENTS.unshift({
-          id: orderId,
-          tracking: trackingNumber,
-          order_id: orderId,
-          customer: "Rohan Sharma",
-          city: currentCustomerCity,
-          items: shoppingCart.length,
-          status: "PREPARING",
-          hub_id: optimalHub.id
-        });
-
-        // Clear cart
-        shoppingCart = [];
-        renderMiniCart();
-        renderProducts();
-        renderProximityWidget();
-        renderHubInventory();
-        renderKanban();
-
-        showToast(`🎉 Order #${orderId} Placed! Tracking: ${trackingNumber}`, "success");
+      if (step.class === "log-complete") {
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = "1";
+          btn.innerText = "Confirm Atomic Order (ACID Commit)";
+        }
+        showToast(`🎉 Order committed successfully with Tracking ${randomTracking}!`, "success");
       }
     }, step.delay);
   });
 }
+
 
 // ============================================================================
 // WAREHOUSE MANAGER PORTAL LOGIC
@@ -858,8 +958,10 @@ function initEventHandlers() {
   // Customer Delivery City Select
   document.getElementById("customer-city-select")?.addEventListener("change", e => {
     currentCustomerCity = e.target.value;
-    document.getElementById("map-customer-city-label").innerText = currentCustomerCity;
+    const cityLbl = document.getElementById("map-customer-city-label");
+    if (cityLbl) cityLbl.innerText = currentCustomerCity;
     renderProximityWidget();
+    renderGeodesicMap();
     showToast(`Recalibrated geodesic route for customer destination: ${currentCustomerCity}`, "info");
   });
 
@@ -871,11 +973,56 @@ function initEventHandlers() {
     showToast("Shopping cart cleared.", "info");
   });
 
-  // Checkout Modal Triggers
+  // Checkout & Proximity Map Analytics Modal Triggers
   document.getElementById("open-cart-modal-btn")?.addEventListener("click", openCheckoutModal);
   document.getElementById("sidebar-proceed-checkout-btn")?.addEventListener("click", openCheckoutModal);
+  document.getElementById("open-proximity-analytics-btn")?.addEventListener("click", openCheckoutModal);
+  document.getElementById("proximity-routing-summary-badge")?.addEventListener("click", openCheckoutModal);
   document.getElementById("close-checkout-modal-btn")?.addEventListener("click", () => {
     document.getElementById("checkout-modal-backdrop")?.classList.remove("open");
+  });
+
+  // Map Zoom Controls
+  let currentMapScale = 1.0;
+  document.getElementById("map-zoom-in")?.addEventListener("click", () => {
+    if (currentMapScale < 1.6) {
+      currentMapScale += 0.15;
+      const svg = document.getElementById("india-geodesic-svg");
+      if (svg) svg.style.transform = `scale(${currentMapScale})`;
+    }
+  });
+  document.getElementById("map-zoom-out")?.addEventListener("click", () => {
+    if (currentMapScale > 0.85) {
+      currentMapScale -= 0.15;
+      const svg = document.getElementById("india-geodesic-svg");
+      if (svg) svg.style.transform = `scale(${currentMapScale})`;
+    }
+  });
+
+  // Payment Method Tabs
+  const payTabs = document.querySelectorAll(".pay-selector-tab");
+  payTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      payTabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const method = tab.getAttribute("data-method");
+      document.querySelectorAll(".payment-method-panel").forEach(p => p.classList.remove("active"));
+      if (method === "UPI") {
+        document.getElementById("payment-panel-upi")?.classList.add("active");
+      } else if (method === "CARD") {
+        document.getElementById("payment-panel-card")?.classList.add("active");
+      } else if (method === "NETBANKING") {
+        document.getElementById("payment-panel-netbanking")?.classList.add("active");
+      }
+    });
+  });
+
+  // Clear Telemetry Terminal
+  document.getElementById("clear-telemetry-btn")?.addEventListener("click", () => {
+    const term = document.getElementById("acid-terminal-screen");
+    if (term) {
+      term.innerHTML = '<div class="log-line log-dim">Live Telemetry Terminal cleared. Ready for next transaction.</div>';
+    }
   });
 
   // Confirm ACID Order Button
