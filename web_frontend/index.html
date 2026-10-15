@@ -17,6 +17,86 @@
 <body class="dark-theme">
 
   <!-- =========================================================================
+       OPENING EXPERIENCE: 3D SAKURA MECHANICAL KEYBOARD ASSEMBLY ANIMATION
+       ========================================================================= -->
+  <aside id="assembly-splash" class="assembly-splash" aria-label="3D Mechanical Keyboard Assembly Animation">
+    <!-- Ambient Sakura Petals Floating Canvas -->
+    <div class="assembly-ambient-petals" id="assembly-petals-container"></div>
+    
+    <!-- Top Action Controls & Brand Pill -->
+    <div class="assembly-top-bar">
+      <div class="assembly-brand-badge">
+        <span class="sakura-badge-flower">🌸</span>
+        <div class="assembly-brand-titles">
+          <span class="assembly-brand-name">NEXUS SAKURA FUJI 65%</span>
+          <span class="assembly-stage-indicator" id="assembly-stage-pill">ASSEMBLING CHASSIS & KEYCAP MATRIX...</span>
+        </div>
+      </div>
+      <div class="assembly-top-actions">
+        <button class="assembly-action-chip" id="assembly-audio-toggle" title="Toggle Mechanical Switch Sound FX">
+          <span id="audio-icon">🔊</span> <span id="audio-text">Audio ON</span>
+        </button>
+        <button class="assembly-skip-chip" id="assembly-skip-btn" title="Skip directly to catalog">
+          <span>Enter Storefront</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3D Perspective Stage -->
+    <div class="assembly-stage-viewport">
+      <div class="keyboard-chassis-3d" id="keyboard-chassis">
+        <!-- Underglow PCB Neon Ring -->
+        <div class="chassis-underglow" id="chassis-underglow"></div>
+        
+        <!-- CNC Anodized Aluminum Top Bezel Case -->
+        <div class="chassis-case">
+          <div class="case-chamfer"></div>
+          
+          <!-- Solid Brass Switch Plate -->
+          <div class="switch-plate">
+            <!-- 65% Precision Key Matrix (Populated by buildKeyboardMatrix) -->
+            <div class="kb-matrix" id="kb-matrix"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom HUD & Interactive Testing Strip -->
+    <div class="assembly-bottom-hud">
+      <div class="assembly-hud-stats">
+        <div class="hud-stat-box">
+          <span class="hud-label">SWITCHES</span>
+          <span class="hud-val">Sakura Pink Linear (45g POM)</span>
+        </div>
+        <div class="hud-stat-box">
+          <span class="hud-label">PROFILE</span>
+          <span class="hud-val">Cherry Dye-Sub PBT</span>
+        </div>
+        <div class="hud-stat-box">
+          <span class="hud-label">PLATE</span>
+          <span class="hud-val">Mirror Polished Brass</span>
+        </div>
+        <div class="hud-stat-box">
+          <span class="hud-label">STATUS</span>
+          <span class="hud-val status-text" id="assembly-hud-status">Attaching Keycaps...</span>
+        </div>
+      </div>
+
+      <div class="assembly-action-area">
+        <p class="assembly-interactive-hint" id="assembly-hint-text">
+          ✨ Press keys on your physical keyboard or click keycaps to test switch feel!
+        </p>
+        <button class="assembly-enter-btn pulse" id="assembly-enter-btn">
+          <span class="sparkle">✦</span>
+          <span>EXPLORE STOREFRONT CATALOG</span>
+          <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
        GLOBAL APP HEADER & ROLE SWITCHER
        ========================================================================= -->
   <header class="app-header" id="app-header">
@@ -101,6 +181,11 @@
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
           <polyline points="22,6 12,13 2,6"></polyline>
         </svg>
+      </button>
+
+      <!-- Keyboard Assembly FX Replay Launcher -->
+      <button class="header-action-btn" id="replay-assembly-btn" title="Replay 3D Keyboard Assembly Animation">
+        <span style="font-size: 15px;">⌨️</span>
       </button>
     </div>
   </header>

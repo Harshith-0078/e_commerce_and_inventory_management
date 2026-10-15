@@ -958,6 +958,392 @@ function initEventHandlers() {
 }
 
 // ============================================================================
+// 3D SAKURA MECHANICAL KEYBOARD ASSEMBLY ENGINE
+// ============================================================================
+
+const KEYBOARD_LAYOUT_65 = [
+  // Row 0: 16 units
+  [
+    { code: "Escape", label: "🌸", sub: "ESC", unit: 1, type: "novelty-sakura" },
+    { code: "Digit1", label: "1", sub: "!", unit: 1, type: "alpha" },
+    { code: "Digit2", label: "2", sub: "@", unit: 1, type: "alpha" },
+    { code: "Digit3", label: "3", sub: "#", unit: 1, type: "alpha" },
+    { code: "Digit4", label: "4", sub: "$", unit: 1, type: "alpha" },
+    { code: "Digit5", label: "5", sub: "%", unit: 1, type: "alpha" },
+    { code: "Digit6", label: "6", sub: "^", unit: 1, type: "alpha" },
+    { code: "Digit7", label: "7", sub: "&", unit: 1, type: "alpha" },
+    { code: "Digit8", label: "8", sub: "*", unit: 1, type: "alpha" },
+    { code: "Digit9", label: "9", sub: "(", unit: 1, type: "alpha" },
+    { code: "Digit0", label: "0", sub: ")", unit: 1, type: "alpha" },
+    { code: "Minus", label: "-", sub: "_", unit: 1, type: "alpha" },
+    { code: "Equal", label: "=", sub: "+", unit: 1, type: "alpha" },
+    { code: "Backspace", label: "⌫", sub: "BACK", unit: 2, type: "modifier" },
+    { code: "Delete", label: "DEL", sub: "富士", unit: 1, type: "novelty-fuji" }
+  ],
+  // Row 1: 16 units
+  [
+    { code: "Tab", label: "TAB", sub: "↹", unit: 1.5, type: "modifier" },
+    { code: "KeyQ", label: "Q", unit: 1, type: "alpha" },
+    { code: "KeyW", label: "W", unit: 1, type: "alpha" },
+    { code: "KeyE", label: "E", unit: 1, type: "alpha" },
+    { code: "KeyR", label: "R", unit: 1, type: "alpha" },
+    { code: "KeyT", label: "T", unit: 1, type: "alpha" },
+    { code: "KeyY", label: "Y", unit: 1, type: "alpha" },
+    { code: "KeyU", label: "U", unit: 1, type: "alpha" },
+    { code: "KeyI", label: "I", unit: 1, type: "alpha" },
+    { code: "KeyO", label: "O", unit: 1, type: "alpha" },
+    { code: "KeyP", label: "P", unit: 1, type: "alpha" },
+    { code: "BracketLeft", label: "[", sub: "{", unit: 1, type: "alpha" },
+    { code: "BracketRight", label: "]", sub: "}", unit: 1, type: "alpha" },
+    { code: "Backslash", label: "\\", sub: "|", unit: 1.5, type: "alpha" },
+    { code: "PageUp", label: "PGUP", sub: "鳥居", unit: 1, type: "novelty-fuji" }
+  ],
+  // Row 2: 16 units
+  [
+    { code: "CapsLock", label: "CAPS", sub: "⇪", unit: 1.75, type: "modifier" },
+    { code: "KeyA", label: "A", unit: 1, type: "alpha" },
+    { code: "KeyS", label: "S", unit: 1, type: "alpha" },
+    { code: "KeyD", label: "D", unit: 1, type: "alpha" },
+    { code: "KeyF", label: "F", sub: "━", unit: 1, type: "alpha" },
+    { code: "KeyG", label: "G", unit: 1, type: "alpha" },
+    { code: "KeyH", label: "H", unit: 1, type: "alpha" },
+    { code: "KeyJ", label: "J", sub: "━", unit: 1, type: "alpha" },
+    { code: "KeyK", label: "K", unit: 1, type: "alpha" },
+    { code: "KeyL", label: "L", unit: 1, type: "alpha" },
+    { code: "Semicolon", label: ";", sub: ":", unit: 1, type: "alpha" },
+    { code: "Quote", label: "'", sub: "\"", unit: 1, type: "alpha" },
+    { code: "Enter", label: "RETURN ⏎", sub: "富士山", unit: 2.25, type: "novelty-fuji" },
+    { code: "PageDown", label: "PGDN", sub: "桜", unit: 1, type: "novelty-sakura" }
+  ],
+  // Row 3: 16 units
+  [
+    { code: "ShiftLeft", label: "SHIFT ⇧", unit: 2.25, type: "modifier" },
+    { code: "KeyZ", label: "Z", unit: 1, type: "alpha" },
+    { code: "KeyX", label: "X", unit: 1, type: "alpha" },
+    { code: "KeyC", label: "C", unit: 1, type: "alpha" },
+    { code: "KeyV", label: "V", unit: 1, type: "alpha" },
+    { code: "KeyB", label: "B", unit: 1, type: "alpha" },
+    { code: "KeyN", label: "N", unit: 1, type: "alpha" },
+    { code: "KeyM", label: "M", unit: 1, type: "alpha" },
+    { code: "Comma", label: ",", sub: "<", unit: 1, type: "alpha" },
+    { code: "Period", label: ".", sub: ">", unit: 1, type: "alpha" },
+    { code: "Slash", label: "/", sub: "?", unit: 1, type: "alpha" },
+    { code: "ShiftRight", label: "SHIFT ⇧", unit: 1.75, type: "modifier" },
+    { code: "ArrowUp", label: "▲", unit: 1, type: "novelty-sakura" },
+    { code: "End", label: "END", unit: 1, type: "modifier" }
+  ],
+  // Row 4: 16 units
+  [
+    { code: "ControlLeft", label: "CTRL", unit: 1.25, type: "modifier" },
+    { code: "MetaLeft", label: "❖", sub: "WIN", unit: 1.25, type: "modifier" },
+    { code: "AltLeft", label: "ALT", unit: 1.25, type: "modifier" },
+    { code: "Space", label: "🌸 桜 S A K U R A 🌸", unit: 6.25, type: "spacebar-sakura" },
+    { code: "AltRight", label: "ALT", unit: 1.25, type: "modifier" },
+    { code: "ContextMenu", label: "FN", unit: 1, type: "modifier" },
+    { code: "ArrowLeft", label: "◄", unit: 1, type: "novelty-sakura" },
+    { code: "ArrowDown", label: "▼", unit: 1, type: "novelty-sakura" },
+    { code: "ArrowRight", label: "►", unit: 1.75, type: "novelty-sakura" }
+  ]
+];
+
+let assemblyAudioEnabled = true;
+let assemblyAudioContext = null;
+let assemblyTimeouts = [];
+let assemblyAutoDismissTimer = null;
+
+function getAssemblyAudioCtx() {
+  if (!assemblyAudioEnabled) return null;
+  if (!assemblyAudioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      assemblyAudioContext = new AudioContextClass();
+    }
+  }
+  if (assemblyAudioContext && assemblyAudioContext.state === "suspended") {
+    assemblyAudioContext.resume();
+  }
+  return assemblyAudioContext;
+}
+
+// Synthesize authentic mechanical switch sound ("thock" on snap & keypress)
+function playMechanicalThock(isSpace = false) {
+  if (!assemblyAudioEnabled) return;
+  try {
+    const ctx = getAssemblyAudioCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    
+    // Low body oscillator (POM linear switch bottom out)
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(isSpace ? 520 : 880, now);
+    filter.Q.setValueAtTime(2.2, now);
+
+    osc.type = "triangle";
+    const startFreq = isSpace ? 150 : 250;
+    const endFreq = isSpace ? 65 : 110;
+    osc.frequency.setValueAtTime(startFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, now + (isSpace ? 0.08 : 0.045));
+
+    oscGain.gain.setValueAtTime(isSpace ? 0.22 : 0.14, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + (isSpace ? 0.1 : 0.055));
+
+    osc.connect(filter);
+    filter.connect(oscGain);
+    oscGain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + (isSpace ? 0.11 : 0.06));
+
+    // Subtle click transient (stem bottoming into brass housing)
+    const clickBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.005), ctx.sampleRate);
+    const data = clickBuffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.25));
+    }
+    const noiseNode = ctx.createBufferSource();
+    noiseNode.buffer = clickBuffer;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(isSpace ? 0.08 : 0.05, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.006);
+
+    noiseNode.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseNode.start(now);
+  } catch (err) {
+    // Ignore audio autoplay restrictions gracefully
+  }
+}
+
+function spawnAmbientPetals() {
+  const container = document.getElementById("assembly-petals-container");
+  if (!container) return;
+  container.innerHTML = "";
+  const count = 18;
+  for (let i = 0; i < count; i++) {
+    const petal = document.createElement("div");
+    petal.className = "ambient-petal";
+    const left = Math.random() * 100;
+    const sizeW = 10 + Math.random() * 12;
+    const sizeH = 14 + Math.random() * 16;
+    const dur = 7 + Math.random() * 7;
+    const delay = Math.random() * 5;
+    const opacity = 0.5 + Math.random() * 0.45;
+
+    petal.style.left = `${left}%`;
+    petal.style.width = `${sizeW}px`;
+    petal.style.height = `${sizeH}px`;
+    petal.style.animationDuration = `${dur}s`;
+    petal.style.animationDelay = `${delay}s`;
+    petal.style.opacity = opacity;
+    container.appendChild(petal);
+  }
+}
+
+function spawnKeyShockwave(keyEl) {
+  if (!keyEl) return;
+  const shock = document.createElement("div");
+  shock.className = "key-shockwave";
+  keyEl.appendChild(shock);
+  setTimeout(() => shock.remove(), 480);
+}
+
+function initKeyboardAssembly() {
+  const matrixContainer = document.getElementById("kb-matrix");
+  if (!matrixContainer) return;
+
+  spawnAmbientPetals();
+
+  // Populate Matrix
+  matrixContainer.innerHTML = "";
+  KEYBOARD_LAYOUT_65.forEach((rowKeys) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "kb-row";
+
+    rowKeys.forEach((key) => {
+      const keyEl = document.createElement("div");
+      keyEl.className = "kb-key";
+      keyEl.dataset.code = key.code;
+      keyEl.style.setProperty("--unit", key.unit);
+
+      // Switch Socket & Stem
+      const socketEl = document.createElement("div");
+      socketEl.className = "switch-socket";
+      socketEl.innerHTML = `
+        <div class="switch-led"></div>
+        <div class="switch-stem"></div>
+      `;
+
+      // Keycap
+      const keycapEl = document.createElement("div");
+      keycapEl.className = `kb-keycap key-${key.type}`;
+      keycapEl.innerHTML = `
+        <span class="key-legend">${key.label}</span>
+        ${key.sub ? `<span class="key-sublegend">${key.sub}</span>` : ""}
+      `;
+
+      // Click / Tap listener for manual testing
+      keyEl.addEventListener("mousedown", () => {
+        keycapEl.classList.add("pressed");
+        playMechanicalThock(key.code === "Space");
+        spawnKeyShockwave(keyEl);
+      });
+      keyEl.addEventListener("mouseup", () => keycapEl.classList.remove("pressed"));
+      keyEl.addEventListener("mouseleave", () => keycapEl.classList.remove("pressed"));
+
+      keyEl.appendChild(socketEl);
+      keyEl.appendChild(keycapEl);
+      rowEl.appendChild(keyEl);
+    });
+
+    matrixContainer.appendChild(rowEl);
+  });
+
+  // Attach interactive typing handlers on window
+  window.addEventListener("keydown", (e) => {
+    const splash = document.getElementById("assembly-splash");
+    if (!splash || splash.classList.contains("dismissed")) return;
+    
+    // Ignore input if typing in an actual input field
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+
+    const keyEl = document.querySelector(`.kb-key[data-code="${e.code}"]`);
+    if (keyEl) {
+      const cap = keyEl.querySelector(".kb-keycap");
+      if (cap && !cap.classList.contains("pressed")) {
+        cap.classList.add("pressed");
+        playMechanicalThock(e.code === "Space");
+        spawnKeyShockwave(keyEl);
+      }
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    const keyEl = document.querySelector(`.kb-key[data-code="${e.code}"]`);
+    if (keyEl) {
+      const cap = keyEl.querySelector(".kb-keycap");
+      if (cap) cap.classList.remove("pressed");
+    }
+  });
+
+  // Audio Toggle Button
+  const audioBtn = document.getElementById("assembly-audio-toggle");
+  if (audioBtn) {
+    audioBtn.addEventListener("click", () => {
+      assemblyAudioEnabled = !assemblyAudioEnabled;
+      const icon = document.getElementById("audio-icon");
+      const text = document.getElementById("audio-text");
+      if (icon) icon.textContent = assemblyAudioEnabled ? "🔊" : "🔇";
+      if (text) text.textContent = assemblyAudioEnabled ? "Audio ON" : "Muted";
+      if (assemblyAudioEnabled) {
+        getAssemblyAudioCtx();
+        playMechanicalThock(false);
+      }
+    });
+  }
+
+  // Dismiss / Enter Storefront Buttons
+  document.getElementById("assembly-skip-btn")?.addEventListener("click", dismissAssemblySplash);
+  document.getElementById("assembly-enter-btn")?.addEventListener("click", dismissAssemblySplash);
+
+  // Header Replay Button
+  document.getElementById("replay-assembly-btn")?.addEventListener("click", () => {
+    const splash = document.getElementById("assembly-splash");
+    if (splash) {
+      splash.classList.remove("dismissed");
+      startAssemblyAnimation();
+    }
+  });
+
+  // Start initial sequence
+  startAssemblyAnimation();
+}
+
+function startAssemblyAnimation() {
+  // Clear any existing timers
+  assemblyTimeouts.forEach(t => clearTimeout(t));
+  assemblyTimeouts = [];
+  if (assemblyAutoDismissTimer) clearTimeout(assemblyAutoDismissTimer);
+
+  const underglow = document.getElementById("chassis-underglow");
+  if (underglow) underglow.classList.remove("active");
+
+  const stagePill = document.getElementById("assembly-stage-pill");
+  if (stagePill) stagePill.textContent = "ASSEMBLING CHASSIS & KEYCAP MATRIX...";
+
+  const statusText = document.getElementById("assembly-hud-status");
+  if (statusText) {
+    statusText.textContent = "Attaching Keycaps...";
+    statusText.classList.remove("text-emerald");
+  }
+
+  const allKeycaps = document.querySelectorAll(".kb-keycap");
+  allKeycaps.forEach(cap => {
+    cap.classList.remove("anim-attaching", "attached", "pressed");
+  });
+
+  // Calculate organic staggered cascade delays
+  let maxDelay = 0;
+  KEYBOARD_LAYOUT_65.forEach((rowKeys, rIdx) => {
+    rowKeys.forEach((key, cIdx) => {
+      const keyEl = document.querySelector(`.kb-key[data-code="${key.code}"]`);
+      if (!keyEl) return;
+      const cap = keyEl.querySelector(".kb-keycap");
+      if (!cap) return;
+
+      // Base delay: cascading wave from top-left, with Spacebar climax
+      let delay = (rIdx * 0.22) + (cIdx * 0.038) + 0.15;
+      if (key.code === "Space") {
+        delay = (rIdx * 0.22) + 0.85; // Majestic climax landing
+      }
+      if (delay > maxDelay) maxDelay = delay;
+
+      cap.style.setProperty("--delay", `${delay.toFixed(3)}s`);
+
+      // Timer to snap in and trigger sound + shockwave
+      const snapTimer = setTimeout(() => {
+        cap.classList.add("attached");
+        playMechanicalThock(key.code === "Space");
+        spawnKeyShockwave(keyEl);
+      }, (delay + 0.38) * 1000);
+      assemblyTimeouts.push(snapTimer);
+
+      // Trigger CSS animation class
+      cap.classList.add("anim-attaching");
+    });
+  });
+
+  // Completion sequence when all keys have attached
+  const completionTimer = setTimeout(() => {
+    if (underglow) underglow.classList.add("active");
+    if (stagePill) stagePill.textContent = "🌸 ALL 68 KEYCAPS ASSEMBLED — SYSTEM READY";
+    if (statusText) {
+      statusText.textContent = "✓ Assembled & Firmware Active";
+      statusText.classList.add("text-emerald");
+    }
+
+    // Auto dismiss after 5 seconds if left idle
+    assemblyAutoDismissTimer = setTimeout(() => {
+      dismissAssemblySplash();
+    }, 5500);
+  }, (maxDelay + 0.6) * 1000);
+
+  assemblyTimeouts.push(completionTimer);
+}
+
+function dismissAssemblySplash() {
+  if (assemblyAutoDismissTimer) clearTimeout(assemblyAutoDismissTimer);
+  const splash = document.getElementById("assembly-splash");
+  if (splash && !splash.classList.contains("dismissed")) {
+    splash.classList.add("dismissed");
+    showToast("✨ Welcome to Nexus Peripherals! Browse custom boards, switches & keycaps.", "info");
+  }
+}
+
+// ============================================================================
 // APP ENTRYPOINT
 // ============================================================================
 
@@ -968,4 +1354,6 @@ window.addEventListener("DOMContentLoaded", () => {
   renderHubInventory();
   renderKanban();
   initEventHandlers();
+  initKeyboardAssembly();
 });
+

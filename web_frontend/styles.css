@@ -1783,3 +1783,677 @@ body {
   .modal-body-split { grid-template-columns: 1fr; }
   .kanban-board-container { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ==========================================================================
+   3D MECHANICAL KEYBOARD ASSEMBLY OPENING EXPERIENCE
+   Theme: Japanese Cherry Blossom & Mt. Fuji
+   Palette: Sakura Pinks (#FFB7C5, #FF94B8, #FF69B4), Fuji Lilac (#D49BEA, #8A64D6),
+            Obsidian Dark Glass (#1A1325, #080C14)
+   ========================================================================== */
+
+.assembly-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px 28px;
+  background: radial-gradient(circle at 50% 30%, rgba(55, 28, 70, 0.95), rgba(16, 11, 24, 0.98) 75%),
+              url('images/fuji_sakura_bg.jpg') center/cover no-repeat fixed;
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.assembly-splash.dismissed {
+  opacity: 0;
+  transform: scale(1.08) translateY(-30px);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Floating Sakura Petals Canvas */
+.assembly-ambient-petals {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.ambient-petal {
+  position: absolute;
+  background: linear-gradient(135deg, rgba(255, 183, 197, 0.9), rgba(255, 130, 172, 0.65));
+  border-radius: 14px 2px 14px 2px;
+  filter: drop-shadow(0 2px 6px rgba(255, 105, 180, 0.45));
+  pointer-events: none;
+  animation: petalFall linear infinite;
+}
+
+@keyframes petalFall {
+  0% {
+    transform: translateY(-40px) translateX(0) rotateZ(0deg) rotateY(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(105vh) translateX(120px) rotateZ(380deg) rotateY(240deg);
+    opacity: 0;
+  }
+}
+
+/* Top Bar Controls */
+.assembly-top-bar {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.assembly-brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(30, 18, 44, 0.75);
+  border: 1px solid rgba(255, 183, 197, 0.35);
+  padding: 8px 20px;
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.sakura-badge-flower {
+  font-size: 22px;
+  display: inline-block;
+  animation: flowerPulse 3s ease-in-out infinite;
+}
+
+@keyframes flowerPulse {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.15) rotate(15deg); }
+}
+
+.assembly-brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.assembly-brand-name {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  background: linear-gradient(135deg, #FFF0F5 0%, #FFB7C5 60%, #D49BEA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.assembly-stage-indicator {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: #D49BEA;
+  letter-spacing: 1px;
+}
+
+.assembly-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.assembly-action-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(32, 20, 48, 0.7);
+  border: 1px solid rgba(255, 183, 197, 0.3);
+  border-radius: var(--radius-full);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.assembly-action-chip:hover {
+  background: rgba(56, 36, 76, 0.85);
+  border-color: var(--accent-pink);
+  transform: translateY(-1px);
+}
+
+.assembly-skip-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, rgba(212, 155, 234, 0.25), rgba(255, 105, 180, 0.3));
+  border: 1px solid rgba(255, 183, 197, 0.45);
+  border-radius: var(--radius-full);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.2);
+}
+
+.assembly-skip-chip:hover {
+  background: linear-gradient(135deg, rgba(212, 155, 234, 0.45), rgba(255, 105, 180, 0.5));
+  border-color: #FFB7C5;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 105, 180, 0.35);
+}
+
+/* 3D Perspective Stage Viewport */
+.assembly-stage-viewport {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1250px;
+  perspective-origin: 50% 42%;
+  margin: 16px 0;
+  padding: 10px 0;
+}
+
+.keyboard-chassis-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(23deg) rotateZ(-3deg) rotateY(1deg);
+  width: 860px;
+  max-width: 95vw;
+  transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
+  animation: chassisFloat 6s ease-in-out infinite alternate;
+}
+
+@keyframes chassisFloat {
+  0% { transform: rotateX(23deg) rotateZ(-3deg) rotateY(1deg) translateY(0); }
+  100% { transform: rotateX(21deg) rotateZ(-2.5deg) rotateY(1.5deg) translateY(-8px); }
+}
+
+/* Neon Underglow */
+.chassis-underglow {
+  position: absolute;
+  inset: -12px -16px;
+  border-radius: 26px;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease, box-shadow 1.2s ease;
+  pointer-events: none;
+}
+
+.chassis-underglow.active {
+  opacity: 1;
+  box-shadow: 0 15px 60px 15px rgba(255, 105, 180, 0.65),
+              0 0 100px 30px rgba(212, 155, 234, 0.45),
+              0 25px 80px rgba(255, 183, 197, 0.3);
+  animation: underglowBreathing 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes underglowBreathing {
+  0% {
+    box-shadow: 0 15px 50px 12px rgba(255, 105, 180, 0.6),
+                0 0 90px 25px rgba(212, 155, 234, 0.4);
+  }
+  100% {
+    box-shadow: 0 20px 75px 20px rgba(255, 105, 180, 0.8),
+                0 0 120px 40px rgba(212, 155, 234, 0.6);
+  }
+}
+
+/* CNC Aluminum Chassis */
+.chassis-case {
+  position: relative;
+  z-index: 2;
+  border-radius: 18px;
+  padding: 16px 18px 20px;
+  background: linear-gradient(160deg, #2A1A38 0%, #170E22 65%, #0F0818 100%);
+  border: 2px solid rgba(255, 183, 197, 0.45);
+  box-shadow: 0 25px 55px -10px rgba(0, 0, 0, 0.85),
+              inset 0 2px 4px rgba(255, 255, 255, 0.25),
+              inset 0 -3px 8px rgba(0, 0, 0, 0.7);
+  transform-style: preserve-3d;
+}
+
+.case-chamfer {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Mirror Brass Switch Plate */
+.switch-plate {
+  background: linear-gradient(135deg, #443224 0%, #2A1D16 100%);
+  border-radius: 10px;
+  padding: 10px;
+  border: 1px solid rgba(235, 185, 110, 0.35);
+  box-shadow: inset 0 4px 14px rgba(0, 0, 0, 0.85),
+              inset 0 0 0 1px rgba(212, 155, 234, 0.15);
+  transform-style: preserve-3d;
+}
+
+/* Key Matrix & Rows */
+.kb-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transform-style: preserve-3d;
+}
+
+.kb-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  transform-style: preserve-3d;
+}
+
+/* Individual Key Slot */
+.kb-key {
+  position: relative;
+  height: 48px;
+  flex: var(--unit, 1);
+  transform-style: preserve-3d;
+  user-select: none;
+  cursor: pointer;
+}
+
+/* Switch Socket on Brass Plate */
+.switch-socket {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: #20132A;
+  border: 1px solid rgba(255, 183, 197, 0.2);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.switch-led {
+  position: absolute;
+  top: 3px;
+  width: 6px;
+  height: 3px;
+  background: #FFB7C5;
+  border-radius: 1px;
+  box-shadow: 0 0 8px #FF69B4, 0 0 14px rgba(255, 105, 180, 0.8);
+  opacity: 0.85;
+}
+
+.switch-stem {
+  width: 12px;
+  height: 12px;
+  position: relative;
+  background: #FF85A2;
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(255, 105, 180, 0.6);
+}
+
+.switch-stem::before,
+.switch-stem::after {
+  content: "";
+  position: absolute;
+  background: #FFAAC1;
+  border-radius: 1px;
+}
+
+.switch-stem::before {
+  top: 1px;
+  bottom: 1px;
+  left: 4px;
+  right: 4px;
+}
+
+.switch-stem::after {
+  left: 1px;
+  right: 1px;
+  top: 4px;
+  bottom: 4px;
+}
+
+/* Floating Keycap Component */
+.kb-keycap {
+  position: absolute;
+  inset: 0;
+  border-radius: 7px;
+  z-index: 3;
+  transform-style: preserve-3d;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  will-change: transform, opacity, filter;
+  transition: transform 0.08s ease, filter 0.08s ease;
+  
+  /* Initial floating state (elevated in 3D air before snap) */
+  transform: translateY(-85px) translateZ(95px) rotateX(-26deg);
+  opacity: 0;
+}
+
+/* Attaching Keyframe Animation */
+.kb-keycap.anim-attaching {
+  animation: keySnapAttach 0.52s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+.kb-keycap.attached {
+  transform: translateY(0) translateZ(0) rotateX(0);
+  opacity: 1;
+}
+
+@keyframes keySnapAttach {
+  0% {
+    transform: translateY(-90px) translateZ(105px) rotateX(-30deg) scale(1.15);
+    opacity: 0;
+    filter: drop-shadow(0 20px 25px rgba(255, 183, 197, 0.5));
+  }
+  20% {
+    opacity: 1;
+  }
+  75% {
+    /* Switch bottom-out compression */
+    transform: translateY(3px) translateZ(-5px) rotateX(2deg) scale(0.98);
+  }
+  90% {
+    /* Spring rebound */
+    transform: translateY(-1px) translateZ(1px) rotateX(-0.5deg);
+  }
+  100% {
+    transform: translateY(0) translateZ(0) rotateX(0deg) scale(1);
+    opacity: 1;
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
+  }
+}
+
+/* Pressed State for Interactive Typing */
+.kb-keycap.pressed {
+  transform: translateY(3.5px) translateZ(-6px) !important;
+  filter: brightness(1.22) drop-shadow(0 0 10px rgba(255, 183, 197, 0.85)) !important;
+}
+
+/* Shockwave Ring at Point of Attachment / Keypress */
+.key-shockwave {
+  position: absolute;
+  inset: -8px;
+  border-radius: 12px;
+  border: 2px solid #FF85A2;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  animation: shockwavePulse 0.45s ease-out forwards;
+}
+
+@keyframes shockwavePulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+/* Keycap Color Themes & Legends */
+
+/* 1. Alphas (Letters & Symbols) */
+.key-alpha {
+  background: linear-gradient(175deg, #FFF9FA 0%, #FBE5EF 100%);
+  border: 1px solid rgba(220, 160, 185, 0.55);
+  border-bottom: 2px solid #B8789A;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.35),
+              inset 0 2px 2px rgba(255, 255, 255, 0.9),
+              inset 0 -2px 3px rgba(184, 120, 154, 0.35);
+  color: #381B43;
+}
+
+.key-alpha .key-legend {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.key-alpha .key-sublegend {
+  font-size: 9px;
+  color: #A35C7A;
+  align-self: flex-end;
+  line-height: 1;
+}
+
+/* 2. Modifiers (Tab, Caps, Shift, Ctrl, Alt, Del, Bksp) */
+.key-modifier {
+  background: linear-gradient(175deg, #A47CC3 0%, #7D519E 100%);
+  border: 1px solid rgba(255, 183, 197, 0.4);
+  border-bottom: 2px solid #573373;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4),
+              inset 0 2px 2px rgba(255, 255, 255, 0.45),
+              inset 0 -2px 3px rgba(55, 25, 75, 0.5);
+  color: #FFFFFF;
+}
+
+.key-modifier .key-legend {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.key-modifier .key-sublegend {
+  font-size: 8.5px;
+  color: #FFD6E7;
+  align-self: flex-end;
+}
+
+/* 3. Novelty Sakura (Esc, Arrows, Novelties) */
+.key-novelty-sakura {
+  background: linear-gradient(175deg, #FF8DA8 0%, #FF5983 100%);
+  border: 1px solid rgba(255, 220, 235, 0.65);
+  border-bottom: 2px solid #C42653;
+  box-shadow: 0 4px 10px rgba(255, 105, 180, 0.45),
+              inset 0 2px 2px rgba(255, 255, 255, 0.65);
+  color: #FFFFFF;
+}
+
+.key-novelty-sakura .key-legend {
+  font-size: 13px;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+}
+
+.key-novelty-sakura .key-sublegend {
+  font-size: 8px;
+  color: #FFE6EE;
+  align-self: flex-end;
+  font-weight: 700;
+}
+
+/* 4. Novelty Fuji (Enter & Accents) */
+.key-novelty-fuji {
+  background: linear-gradient(175deg, #FF82A5 0%, #D85A8E 100%);
+  border: 1px solid rgba(255, 220, 235, 0.65);
+  border-bottom: 2px solid #A8255B;
+  box-shadow: 0 4px 10px rgba(255, 105, 180, 0.45),
+              inset 0 2px 2px rgba(255, 255, 255, 0.65);
+  color: #FFFFFF;
+}
+
+.key-novelty-fuji .key-legend {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.key-novelty-fuji .key-sublegend {
+  font-size: 9px;
+  color: #FFF0F5;
+  align-self: flex-end;
+}
+
+/* 5. Custom Spacebar (Sakura Accent) */
+.key-spacebar-sakura {
+  background: linear-gradient(175deg, #FF92AF 0%, #E85B84 100%);
+  border: 1px solid rgba(255, 220, 235, 0.65);
+  border-bottom: 2px solid #B82551;
+  box-shadow: 0 5px 12px rgba(255, 105, 180, 0.45),
+              inset 0 2px 3px rgba(255, 255, 255, 0.7);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.key-spacebar-sakura .key-legend {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
+}
+
+/* Bottom HUD & Action Area */
+.assembly-bottom-hud {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1050px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.assembly-hud-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hud-stat-box {
+  background: rgba(30, 18, 44, 0.65);
+  border: 1px solid rgba(255, 183, 197, 0.25);
+  border-radius: var(--radius-md);
+  padding: 6px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  backdrop-filter: blur(10px);
+  min-width: 130px;
+}
+
+.hud-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #D49BEA;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.hud-val {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #FFF0F5;
+  margin-top: 2px;
+}
+
+.hud-val.status-text {
+  color: #FFB7C5;
+  font-weight: 700;
+}
+
+.assembly-action-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.assembly-interactive-hint {
+  font-size: 12.5px;
+  color: #E2C2DF;
+  text-align: center;
+  font-weight: 500;
+}
+
+.assembly-enter-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #FF69B4 0%, #D49BEA 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: var(--radius-full);
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(255, 105, 180, 0.45);
+  transition: all 0.25s ease;
+}
+
+.assembly-enter-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(255, 105, 180, 0.65);
+}
+
+.assembly-enter-btn .sparkle {
+  color: #FFF0F5;
+  font-size: 15px;
+}
+
+.assembly-enter-btn .arrow {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.assembly-enter-btn:hover .arrow {
+  transform: translateX(4px);
+}
+
+/* Responsive scaling for 3D Keyboard */
+@media (max-width: 950px) {
+  .keyboard-chassis-3d {
+    transform: rotateX(20deg) rotateZ(-2deg) scale(0.85);
+    transform-origin: center;
+  }
+  .kb-key { height: 42px; }
+  .key-alpha .key-legend { font-size: 11px; }
+  .key-alpha .key-sublegend { display: none; }
+  .key-modifier .key-legend { font-size: 9.5px; }
+}
+
+@media (max-width: 720px) {
+  .keyboard-chassis-3d {
+    transform: rotateX(18deg) rotateZ(0deg) scale(0.68);
+    transform-origin: center;
+  }
+  .kb-key { height: 35px; }
+  .assembly-hud-stats { display: none; }
+  .assembly-splash { padding: 16px 12px 20px; }
+}
+
