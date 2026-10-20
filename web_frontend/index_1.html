@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nexus Peripherals — Multi-Warehouse Proximity Routing</title>
+<meta name="description" content="Multi-warehouse fulfillment platform for custom mechanical keyboards and components.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Exo+2:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="bg"></canvas><div class="floor"></div><canvas id="fx"></canvas>
+
+<!-- BOOT -->
+<div id="boot" style="background-image:linear-gradient(rgba(2,3,10,.78),rgba(2,3,10,.92)),url('images/fuji_sakura_bg.jpg')">
+  <div class="boot-in">
+    <h2>NEXUS//PERIPHERALS</h2>
+    <p id="boot-hint">Type on your keyboard or click the keys, then press Enter to open the store.</p>
+    <div class="kb" id="kb" aria-hidden="true"></div>
+    <div class="boot-bar"><i></i></div>
+    <button class="btn go" id="boot-enter" style="margin-top:18px">Explore storefront →</button>
+  </div>
+</div>
+
+<div class="app">
+  <nav class="rail" aria-label="Portals">
+    <div class="logo">N</div>
+    <button class="nav on" data-portal="customer"><span>⌨</span>SHOP</button>
+    <button class="nav" data-portal="manager"><span>📡</span>HUB</button>
+    <button class="nav" data-portal="admin"><span>📈</span>DATA</button>
+    <button class="nav" id="open-outbox-btn"><span>✉</span>MAIL</button>
+  </nav>
+
+  <div class="wrap">
+    <header class="top">
+      <h1 id="title">NEXUS PERIPHERALS<small>Multi-warehouse proximity routing</small></h1>
+      <input type="search" id="global-search-input" class="search" placeholder="Search keyboards, switches, keycaps" autocomplete="off" aria-label="Search products">
+      <label>Profile
+        <select id="active-profile-select" class="sel">
+          <option value="CUSTOMER">Customer: Rohan</option>
+          <option value="MANAGER_BLR">Bengaluru hub manager</option>
+          <option value="MANAGER_MAA">Chennai hub manager: Samarth</option>
+          <option value="MANAGER_BOM">Mumbai hub manager</option>
+          <option value="ADMIN">System administrator</option>
+        </select>
+      </label>
+      <button class="cartbtn" id="open-cart-modal-btn">CART <span id="cart-item-count-badge">0</span> · <span id="cart-subtotal-header">₹0</span></button>
+    </header>
+
+    <!-- CUSTOMER -->
+    <section class="view on" id="portal-customer-view">
+      <div class="strip">
+        <label>Deliver to <select id="customer-city-select" class="sel"></select></label>
+        <div class="badge-live" id="proximity-routing-summary-badge">Scanning hubs</div>
+        <button class="btn" id="open-proximity-analytics-btn">Open route map</button>
+      </div>
+      <div class="shop">
+        <div>
+          <div class="chips" id="category-filter-pills">
+            <button class="chip on" data-category="ALL">Everything</button>
+            <button class="chip" data-category="1">Keyboards</button>
+            <button class="chip" data-category="2">Switches</button>
+            <button class="chip" data-category="3">Keycaps</button>
+            <button class="chip" data-category="4">Lube &amp; accessories</button>
+          </div>
+          <p class="sub" id="product-count-display" style="margin-bottom:14px"></p>
+          <div class="grid" id="product-card-grid"></div>
+        </div>
+        <aside class="side">
+          <div class="panel">
+            <h2>Hub proximity scan</h2>
+            <p class="sub">Straight-line distance to each warehouse</p>
+            <div class="lanes" id="candidate-hubs-list"></div>
+            <div class="decision" id="routing-decision-banner"></div>
+            <button class="btn go full" id="sidebar-proceed-checkout-btn">Go to checkout</button>
+          </div>
+          <div class="panel">
+            <div class="row"><h2>Cart</h2><button class="link" id="clear-mini-cart-btn">Clear</button></div>
+            <div id="mini-cart-items-list"></div>
+            <div class="row total"><span>Total</span><span id="mini-cart-grand-total">₹0.00</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- MANAGER -->
+    <section class="view" id="portal-manager-view">
+      <div class="panel hubhead">
+        <div>
+          <h2 id="current-manager-hub-name">Hub</h2>
+          <p class="sub" id="current-manager-meta"></p>
+        </div>
+        <div class="acts">
+          <button class="btn alt" id="open-restock-modal-btn">Record restock</button>
+          <button class="btn" id="refresh-hub-inventory-btn">Sync inventory</button>
+        </div>
+      </div>
+      <div class="two">
+        <div class="panel">
+          <div class="row"><h2>Bin inventory</h2><span class="pill low" id="low-stock-count-badge">0 low</span></div>
+          <div class="scroll"><table><thead><tr><th>Item</th><th>SKU</th><th>In bin</th><th>Reorder at</th><th>Status</th><th></th></tr></thead><tbody id="hub-inventory-table-body"></tbody></table></div>
+        </div>
+        <div class="panel">
+          <div class="row"><h2>Shipment pipeline</h2><span class="pill ok" id="active-dispatch-badge"></span></div>
+          <div class="board">
+            <div class="col" data-s="PREPARING"><h4>Preparing <b id="count-col-preparing">0</b></h4><div id="kanban-col-preparing"></div></div>
+            <div class="col" data-s="IN_TRANSIT"><h4>In transit <b id="count-col-in-transit">0</b></h4><div id="kanban-col-in-transit"></div></div>
+            <div class="col" data-s="OUT_FOR_DELIVERY"><h4>Out for delivery <b id="count-col-out-delivery">0</b></h4><div id="kanban-col-out-delivery"></div></div>
+            <div class="col" data-s="DELIVERED"><h4>Delivered <b id="count-col-delivered">0</b></h4><div id="kanban-col-delivered"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section class="view" id="portal-admin-view">
+      <div class="kpis" id="kpi-grid"></div>
+      <div class="panel hubhead">
+        <div><h2>Exploratory data analysis</h2><p class="sub">Fiscal period 2024, January to June</p></div>
+        <div class="acts">
+          <button class="btn alt" id="admin-broadcast-directive-btn">Broadcast directive</button>
+          <button class="btn" id="admin-download-pdf-btn">Export audit PDF</button>
+        </div>
+      </div>
+      <div class="two eda">
+        <div class="panel"><h2>Revenue vs restock intake</h2><p class="sub">Sales in ₹ lakhs (bars), intake in hundreds of units (line)</p><canvas class="ch" id="canvas-operations-trend"></canvas></div>
+        <div class="panel"><h2>Category revenue share</h2><div class="donutbox"><canvas id="canvas-category-donut"></canvas><div class="dc"><b>₹1.42 Cr</b><span>total sales</span></div></div><div id="category-breakdown-legend" class="legend"></div></div>
+      </div>
+      <div class="panel" style="margin-top:22px">
+        <h2>Top components by revenue</h2>
+        <div class="scroll"><table><thead><tr><th>#</th><th>Component</th><th>SKU</th><th>Category</th><th>Units sold</th><th>Revenue</th><th>Velocity</th></tr></thead><tbody id="top-skus-table-body"></tbody></table></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-backdrop" id="checkout-modal-backdrop">
+  <div class="modal wide" role="dialog" aria-label="Order checkout">
+    <div class="mhead"><h2>Order checkout <small>nearest-warehouse routing</small></h2><button class="x" id="close-checkout-modal-btn" aria-label="Close">×</button></div>
+    <div class="mbody split">
+      <div class="mappane">
+        <svg id="geo-map" viewBox="0 0 420 460" aria-label="Route map"></svg>
+        <div class="callouts" id="map-floating-callouts"></div>
+      </div>
+      <div class="invpane">
+        <div class="row"><h3>Cart review</h3><span class="sub">Qty · Price</span></div>
+        <div id="invoice-items-container"></div>
+        <div class="inv-sum" id="invoice-summary"></div>
+        <div class="pay" id="payment-tabs"><button class="chip on" data-m="UPI">UPI QR</button><button class="chip" data-m="CARD">Card</button><button class="chip" data-m="NET">Net banking</button></div>
+        <div class="paybody" id="payment-body"></div>
+        <button class="btn go full big" id="confirm-acid-order-btn">Confirm atomic order (ACID commit)</button>
+        <div class="term"><div class="thead"><span>Live telemetry terminal</span><button class="link" id="clear-telemetry-btn">Clear</button></div><div class="tbody" id="acid-terminal-screen"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DIRECTIVE -->
+<div class="modal-backdrop" id="directive-modal-backdrop">
+  <div class="modal" role="dialog" aria-label="Send directive">
+    <div class="mhead"><h2>Operational directive <small>send to hub managers</small></h2><button class="x" id="close-directive-modal-btn" aria-label="Close">×</button></div>
+    <div class="mbody form">
+      <label>Recipient<select id="directive-recipient-select" class="sel"><option value="ALL">All warehouse managers</option><option value="samarth@gmail.com">Samarth, Chennai hub</option><option value="bengaluru@nexus.internal">Bengaluru hub manager</option><option value="mumbai@nexus.internal">Mumbai hub manager</option></select></label>
+      <label>Priority<select id="directive-priority-select" class="sel"><option value="NORMAL">Normal</option><option value="HIGH" selected>High</option><option value="CRITICAL">Critical</option></select></label>
+      <label>Subject<input id="directive-subject-input" class="inp" value="Annual inventory restock audit and switch intake protocol"></label>
+      <label>Instructions<textarea id="directive-body-input" class="inp" rows="5">Count every mechanical switch variant (Gateron Oil King, Zephyr Linear) at bin level before end of day. Escalate any gap above 2 units to administration.</textarea></label>
+      <div class="acts"><button class="btn alt" id="cancel-directive-btn">Cancel</button><button class="btn go" id="send-directive-email-btn">Send directive</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESTOCK -->
+<div class="modal-backdrop" id="restock-modal-backdrop">
+  <div class="modal" role="dialog" aria-label="Record restock">
+    <div class="mhead"><h2>Record stock intake <small>supplier delivery</small></h2><button class="x" id="close-restock-modal-btn" aria-label="Close">×</button></div>
+    <div class="mbody form">
+      <label>Component<select id="restock-product-select" class="sel"></select></label>
+      <label>Units received<input type="number" id="restock-qty-input" class="inp" value="50" min="1" max="1000"></label>
+      <label>Supplier / batch<input id="restock-supplier-input" class="inp" value="Gateron Factory Direct (Batch NX-2024-B8)"></label>
+      <div class="acts"><button class="btn alt" id="cancel-restock-btn">Cancel</button><button class="btn go" id="confirm-restock-btn">Save restock</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTBOX -->
+<div class="modal-backdrop" id="outbox-modal-backdrop">
+  <div class="modal wide" role="dialog" aria-label="Mail outbox">
+    <div class="mhead"><h2>Mail outbox <small>smtp.gmail.com:587 · logs/email_notifications.log</small></h2><button class="x" id="close-outbox-modal-btn" aria-label="Close">×</button></div>
+    <div class="mbody"><div class="scroll"><table><thead><tr><th>Time</th><th>Type</th><th>To</th><th>Subject</th><th>Status</th></tr></thead><tbody id="outbox-manifest-table-body"></tbody></table></div></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="app.js"></script>
+</body>
+</html>
